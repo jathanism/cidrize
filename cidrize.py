@@ -24,7 +24,7 @@ import sys
 DEBUG = False
 
 
-__all__ = ['parse']
+__all__ = ['cidrize']
 
 
 ## NYI but here for solidarity
