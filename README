@@ -1,6 +1,7 @@
 CIDRIZE
 
-Intelligently take IP addresses, CIDRs, ranges, and wildcard matches to attempt return a valid list of IP addresses that can be worked with. Will automatically fix bad network boundries if it can.
+Intelligently take IP addresses, CIDRs, ranges, and wildcard matches to attempt return a valid list 
+of IP addresses that can be worked with. Will automatically fix bad network boundries if it can.
 
 The cidrize() function is the workhorse that does all the work trying to parse IP addresses correctly.
 
@@ -20,3 +21,39 @@ Hyphenated ranges do not need to form a CIDR block. Netaddr does most of the hea
 Does NOT accept network or host mask notation, so don't bother trying.
 
 The module may also be run interactively for debugging purposes.
+
+DEPENDENCIES
+
+netaddr
+Pythonic manipulation of IPv4, IPv6, CIDR, EUI and MAC network addresses
+http://pypi.python.org/pypi/netaddr/
+
+pyparsing
+Python parsing module
+http://pypi.python.org/pypi/pyparsing/
+
+EXAMPLES
+
+>>> from cidrize import cidrize
+
+Old-fashioned CIDR
+>>> cidrize("1.2.3.4")
+IPNetwork('1.2.3.4/32')
+
+Bad!
+>>> cidrize("1.2.3.38/40")
+CIDR prefix /40 out of range for IPv4!
+
+Hyphenated range
+>>> cidrize("2.4.6.8-2.4.6.80")
+[IPNetwork('2.4.6.8/29'), IPNetwork('2.4.6.16/28'), IPNetwork('2.4.6.32/27'), IPNetwork('2.4.6.64/28'), 
+IPNetwork('2.4.6.80/32')]
+
+Wildcard 
+>>> cidrize("152.163.148.*")
+IPNetwork('152.163.148.0/24')
+
+Bracketed range
+>>> cidrize("21.43.180.1[40-99]")
+[IPNetwork('21.43.180.140/30'), IPNetwork('21.43.180.144/28'), IPNetwork('21.43.180.160/27'), 
+IPNetwork('21.43.180.192/29')]
