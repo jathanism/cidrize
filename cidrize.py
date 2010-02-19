@@ -138,7 +138,7 @@ def main():
     try:
         ipaddr = sys.argv[1]
         #print '    IN:', ipaddr
-        cidr = parse(ipaddr)
+        cidr = cidrize(ipaddr)
         #print 'PARSED:', cidr
         #if cidr: print '------>', spanning_cidr(cidr)
         if cidr is not None: 
