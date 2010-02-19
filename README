@@ -1,0 +1,22 @@
+CIDRIZE
+
+Intelligently take IP addresses, CIDRs, ranges, and wildcard matches to attempt return a valid list of IP addresses that can be worked with. Will automatically fix bad network boundries if it can.
+
+The cidrize() function is the workhorse that does all the work trying to parse IP addresses correctly.
+
+    Input can be several formats:
+        192.0.2.18     
+        192.0.2.64/26  
+        192.0.2.80-192.0.2.85
+        192.0.2.170-175
+        192.0.2.8[0-5]
+
+Hyphenated ranges do not need to form a CIDR block. Netaddr does most of the heavy lifting for us here.
+
+    Input can NOT be:
+        192.0.2.0 0.0.0.255 (hostmask)
+        192.0.2.0 255.255.255.0 (netmask)
+
+Does NOT accept network or host mask notation, so don't bother trying.
+
+The module may also be run interactively for debugging purposes.
