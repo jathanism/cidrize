@@ -3,7 +3,7 @@ CIDRIZE
 Intelligently take IP addresses, CIDRs, ranges, and wildcard matches to attempt return a valid list 
 of IP addresses that can be worked with. Will automatically fix bad network boundries if it can.
 
-The cidrize() function is the workhorse that does all the work trying to parse IP addresses correctly.
+The cidrize() function does all the work trying to parse IP addresses correctly.
 
     Input can be several formats:
         192.0.2.18     
