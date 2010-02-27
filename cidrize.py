@@ -1,38 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 # module cidrize.py
 #
 # Copyright (c) 2010 Jathan McCollum
+#
 
 """
-Intelligently take IP addresses, CIDRs, ranges, and wildcard matches to attempt
+Intelligently take IPv4 addresses, CIDRs, ranges, and wildcard matches to attempt
 return a valid list of IP addresses that can be worked with. Will automatically 
 fix bad network boundries if it can.
 
-The cidrize() function is the workhorse. The module may also be run
+The cidrize() function is the public interface. The module may also be run
 interactively for debugging purposes.
 """
 
-__version__ = '0.1'
+__version__ = '0.2'
 __author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
-from netaddr import *
-from pyparsing import *
+from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange, spanning_cidr,)
+from pyparsing import (Group, Literal, Optional, ParseResults, Word, nestedExpr, nums,)
 import re
 import sys
 
+_SELF = sys.argv[0]
 DEBUG = False
 
 
-__all__ = ['cidrize']
+__all__ = ['cidrize', 'CidrizeError']
 
 
-## NYI but here for solidarity
-class AddrError(AddrFormatError): pass
-class NotCIDRStyleError(AddrError): pass
-class NotRangeStyleError(AddrError): pass
-class NotGlobStyleError(AddrError): pass
-class NotBracketStyleError(AddrError): pass
+class CidrizeError(AddrFormatError): pass
+class NotCIDRStyleError(CidrizeError): pass
+class NotRangeStyleError(CidrizeError): pass
+class NotGlobStyleError(CidrizeError): pass
+class NotBracketStyleError(CidrizeError): pass
 
 
 def parse_brackets(_input):
@@ -71,10 +73,10 @@ def parse_brackets(_input):
     first, last = enders[0], enders[1]
     return IPRange(prefix + first, prefix + last)
 
-def cidrize(ipaddr):
+def cidrize(ipaddr, modular=True):
     """
-    The function that does all the work trying to parse IP addresses correctly.
-    All the logic for parsing to try to do the right thing!
+    This function tries to determine the best way to parse IP addresses correctly & has
+    all the logic for trying to do the right thing!
 
     Input can be several formats:
         192.0.2.18     
@@ -91,17 +93,24 @@ def cidrize(ipaddr):
         192.0.2.0 255.255.255.0 (netmask)
 
     Does NOT accept network or host mask notation, so don't bother trying.
+
+    Returns a list of consolidated netaddr objects. 
+
+    By default parsing exceptions will raise a CidrizeError (modular=True).
+
+    You may pass modular=False to cause exceptions to be stripped & the error text will be 
+    returned as a list. This is intended for use with scripts or APIs out-of-the box.
     """
     ip = None
     try:
         ## Parse old-fashioned CIDR notation
-        if re.match("\d+.\d+.\d+.\d+(?:\/\d+)?$", ipaddr):
+        if re.match("\d+\.\d+\.\d+\.\d+(?:\/\d+)?$", ipaddr):
             if DEBUG: print "Trying CIDR style..."
             ip = IPNetwork(ipaddr)
-            return ip.cidr
+            return [ip.cidr]
 
         ## Parse 1.2.3.118-1.2.3.121 range style
-        elif re.match("\d+.\d+.\d+.\d+\-\d+.\d+.\d+.\d+$", ipaddr):
+        elif re.match("\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$", ipaddr):
             if DEBUG: print "Trying range style..."
         
             start, finish = ipaddr.split('-')
@@ -115,51 +124,42 @@ def cidrize(ipaddr):
             ## reason people do this thinking they are being smart so you end up
             ## with lots of subnets instead of one big supernet.
             if IPAddress(ip.first).words[-1] == 1 and IPAddress(ip.last).words[-1] == 254:
-                return spanning_cidr(ip)
+                return [spanning_cidr(ip)]
             else:
                 return ip.cidrs()
 
         ## Parse 1.2.3.* glob style 
-        elif re.match("\d+.\d+.\d+.\*$", ipaddr):
+        elif re.match("\d+\.\d+\.\d+\.\*$", ipaddr):
             if DEBUG: print "Trying glob style..."
-            return spanning_cidr(IPGlob(ipaddr))
+            return [spanning_cidr(IPGlob(ipaddr))]
         
         ## Parse 1.2.3.4[5-9] bracket style as a last resort
-        #elif re.match("(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]", ipaddr):
-        else:
+        elif re.match("(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]", ipaddr) or re.match("(.*?)\.(\d+)\-(\d+)$", ipaddr):
             if DEBUG: print "Trying bracket style..."
             return parse_brackets(ipaddr).cidrs()
 
-    except (AddrFormatError, TypeError) as err:
-        print err
-        pass
+    except (AddrFormatError, TypeError), err:
+        if modular:
+            raise CidrizeError(err)
+        return [str(err)]
+
+def output_str(cidr):
+    return ', '.join([str(x) for x in cidr])
 
 def main():
+    ipaddr = []
     try:
         ipaddr = sys.argv[1]
-        #print '    IN:', ipaddr
-        cidr = cidrize(ipaddr)
-        #print 'PARSED:', cidr
-        #if cidr: print '------>', spanning_cidr(cidr)
-        if cidr is not None: 
-            print cidr
-            #print spanning_cidr(cidr)
     except IndexError:
-        sys.exit("usage: cidr 1.2.3.4/32")
+        print "usage: %s 1.2.3.4/32" % _SELF
+        sys.exit(-1)
+
+    try:
+        cidr = cidrize(ipaddr, modular=False)
+        if cidr:
+            print output_str(cidr)
+    except IndexError, err:
+        sys.exit(-1)
     
 if __name__ == '__main__':
     main()
-
-    """
-    tests = (
-        '205.188.135.1[18-21]',
-        '5.5.5.5-7',
-        '1.2.3.1-1.2.3.254',
-    )
-
-    for t in tests:
-        print
-        ipr = parse_brackets(t)
-        print ipr.cidrs()
-        print list(ipr)
-    """
