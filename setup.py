@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from distutils.core import setup, Command
+try:
+    from setuptools import setup, Command
+except ImportError:
+    from distutils.core import setup, Command
 import os
 import sys
 
