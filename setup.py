@@ -33,6 +33,7 @@ setup(
     author = 'Jathan McCollum',
     author_email = 'jathan+bitbucket@gmail.com',
     py_modules = ['cidrize'],
+    install_requires=['netaddr>=0.7.4', 'pyparsing>=1.5.2'],
     keywords = [
             'Networking', 'Systems Administration', 'IANA', 'IEEE', 'CIDR', 'IP',
             'IPv4', 'IP Address', 'Firewalls', 'Security',
