@@ -20,6 +20,10 @@ Hyphenated ranges do not need to form a CIDR block. Netaddr does most of the hea
 
 Does NOT accept network or host mask notation, so don't bother trying.
 
+Returns a list of consolidated netaddr objects. By default parsing exceptions will raise a CidrizeError (modular=True). 
+
+You may pass modular=False to cause exceptions to be stripped & the error text will be returned as a list. This is intended for use with scripts or APIs out-of-the box.
+
 The module may also be run interactively for debugging purposes.
 
 DEPENDENCIES
@@ -38,22 +42,33 @@ EXAMPLES
 
 Old-fashioned CIDR
 >>> cidrize("1.2.3.4")
-IPNetwork('1.2.3.4/32')
-
-Bad!
->>> cidrize("1.2.3.38/40")
-CIDR prefix /40 out of range for IPv4!
+[IPNetwork('1.2.3.4/32')]
 
 Hyphenated range
 >>> cidrize("2.4.6.8-2.4.6.80")
-[IPNetwork('2.4.6.8/29'), IPNetwork('2.4.6.16/28'), IPNetwork('2.4.6.32/27'), IPNetwork('2.4.6.64/28'), 
-IPNetwork('2.4.6.80/32')]
+[IPNetwork('2.4.6.8/29'), IPNetwork('2.4.6.16/28'), IPNetwork('2.4.6.32/27'), IPNetwork('2.4.6.64/28'), IPNetwork('2.4.6.80/32')]
 
 Wildcard 
->>> cidrize("152.163.148.*")
-IPNetwork('152.163.148.0/24')
+>>> c("15.63.148.*")
+[IPNetwork('15.63.148.0/24')]
 
 Bracketed range
 >>> cidrize("21.43.180.1[40-99]")
 [IPNetwork('21.43.180.140/30'), IPNetwork('21.43.180.144/28'), IPNetwork('21.43.180.160/27'), 
 IPNetwork('21.43.180.192/29')]
+
+Bad!
+>>> cidrize("1.2.3.38/40")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "cidrize.py", line 145, in cidrize
+    raise CidrizeError(err)
+cidrize.CidrizeError: CIDR prefix /40 out of range for IPv4!
+
+Wack range?!
+>>> c("1.2.3.4-0")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "cidrize.py", line 145, in cidrize
+    raise CidrizeError(err)
+cidrize.CidrizeError: lower bound IP greater than upper bound!
