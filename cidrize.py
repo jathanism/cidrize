@@ -40,8 +40,8 @@ class NotBracketStyleError(CidrizeError): pass
 def parse_brackets(_input):
     """
     Best effort to break down UNIX wildcard style ranges like
-    "205.188.135.1[18-21]" into octects append use first & last numbers of
-    bracketed range as the min/max of the 4th octect. 
+    "1.2.3.1[18-21]" into octets append use first & last numbers of
+    bracketed range as the min/max of the 4th octet. 
 
     This is assuming we'll only ever see [x-y] style ranges in the 4th octet.
 
