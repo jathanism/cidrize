@@ -1,0 +1,12 @@
+0.2 - 2010-02-26
+        - cidrize() always returns a list upon successful parsing.
+        - CidrError exception raised on errors by default. (modular=True).
+        - Exceptions can be silenced and returned as a list of errors (modular=False).
+        - Added CidrizeError to __all__
+        - No longer importing * from netaddr/pyparsing.
+        - Added examples/ipaddr.py which I am using in a web app for strict validation.
+        - Improved docstrings.
+        - Implemented setup.py.
+
+0.1 - 2010-02-19
+        - Initial release       
