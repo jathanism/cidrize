@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from distutils.core import setup
+from distutils.core import setup, Command
 import os
 import sys
 
@@ -11,11 +11,23 @@ if sys.version_info[:2] < (2, 4):
     print "This package requires Python 2.4+. Sorry!"
     sys.exit(-11)
 
+class CleanCommand(Command):
+    description = "cleans up non-package files. (dist, build, etc.)"
+    user_options = []
+    def initialize_options(self):
+        self.files = None
+    def finalize_options(self):
+        self.files = './build ./dist ./MANIFEST ./*.pyc'
+    def run(self):
+        #files = './build ./dist ./MANIFEST ./*.pyc'
+        print 'Cleaning: %s' % self.files
+        os.system('rm -rf ' + self.files)
+
 setup(
     name = 'cidrize',
     version = __version__,
-    url = 'http://bitbucket.org/jathanism/cidrize',
-    download_url = 'http://bitbucket.org/jespern/django-piston/downloads/',
+    url = 'http://bitbucket.org/jathanism/cidrize/',
+    download_url = 'http://bitbucket.org/jathanism/cidrize/downloads/',
     license = 'BSD',
     description = "Cidrize takes IP addresses, CIDRs, ranges, and wildcard matches & attempts return a valid list of IP addresses that can be worked with.",
     author = 'Jathan McCollum',
@@ -50,5 +62,8 @@ setup(
         'Topic :: System :: Operating System',
         'Topic :: System :: Systems Administration',
         'Topic :: Utilities',
-    ]
+    ],
+    cmdclass = {
+        'clean': CleanCommand,
+    }
 )
