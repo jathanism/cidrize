@@ -1,2 +1,5 @@
 * Unit tests
 * Make it a class instead of a function... maybe?
+* Emulate functionality of classic "cidr2dq" script
+* Implement aggregator functionality for use with scripts
+* Add support for reverse/host masks (1.2.3.0 0.0.0.255) & subnet masks (1.2.3.0/255.255.255.0)
