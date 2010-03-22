@@ -20,7 +20,7 @@ class CleanCommand(Command):
     def initialize_options(self):
         self.files = None
     def finalize_options(self):
-        self.files = './build ./dist ./MANIFEST ./*.pyc'
+        self.files = './build ./dist ./MANIFEST ./*.pyc ./*.egg-info'
     def run(self):
         #files = './build ./dist ./MANIFEST ./*.pyc'
         print 'Cleaning: %s' % self.files
