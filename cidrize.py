@@ -18,13 +18,12 @@ interactively for debugging purposes.
 """
 
 
-from distutils.version import LooseVersion
 from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange, spanning_cidr,)
 from pyparsing import (Group, Literal, Optional, ParseResults, Word, nestedExpr, nums,)
 import re
 import sys
 
-__version__ = LooseVersion('0.3')
+__version__ = 0.3
 __author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
 DEBUG = False
