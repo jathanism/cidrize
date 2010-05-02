@@ -7,6 +7,7 @@ except ImportError:
     from distutils.core import setup, Command
 import os
 import sys
+import unittest
 
 from cidrize import __version__
 
@@ -25,6 +26,22 @@ class CleanCommand(Command):
         #files = './build ./dist ./MANIFEST ./*.pyc'
         print 'Cleaning: %s' % self.files
         os.system('rm -rf ' + self.files)
+
+class TestCommand(Command):
+    description = 'run unit tests'
+    user_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        args = [unittest.__file__]
+        for root, dirs, files in os.walk('tests'):
+            for file in files:
+                if file.startswith('test') and file.endswith('py'):
+                    args.append(file[:-3])
+        sys.path.append('tests')
+        unittest.main(None, None, args)
 
 setup(
     name = 'cidrize',
@@ -70,5 +87,6 @@ setup(
     ],
     cmdclass = {
         'clean': CleanCommand,
+        'test': TestCommand,
     }
 )

@@ -1,3 +1,6 @@
+0.3.1 - 2010-05-01
+- Added unittests, however weak they may be.
+
 0.3 - 2010-05-01
 - Added real argument parsing using optparse.
 - Added dump() function for use with verbose output display.

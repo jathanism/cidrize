@@ -23,7 +23,7 @@ from pyparsing import (Group, Literal, Optional, ParseResults, Word, nestedExpr,
 import re
 import sys
 
-__version__ = 0.3
+__version__ = '0.3.1'
 __author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
 DEBUG = False
@@ -195,7 +195,7 @@ def dump(cidr):
     out += "# Class A networks:\t", $num_classa, "\n";
     """
 
-    print out,
+    return out
 
 def parse_args(argv):
     from optparse import OptionParser
@@ -267,7 +267,7 @@ def main():
         cidr = cidrize(ipaddr, modular=False)
         if cidr:
             if opts.verbose:
-                dump(cidr)
+                print dump(cidr),
             else:
                 print output_str(cidr)
     except IndexError, err:
