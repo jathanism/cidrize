@@ -84,7 +84,7 @@ Simple:
 
 Verbose:
 
-    %cidr -v 1.2.3.4/30
+    % cidr -v 1.2.3.4/30
     Spanning CIDR:          1.2.3.4/30
     Block Start/Network:    1.2.3.4
     1st host:               1.2.3.5
