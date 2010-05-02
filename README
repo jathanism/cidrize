@@ -72,3 +72,27 @@ Traceback (most recent call last):
   File "cidrize.py", line 145, in cidrize
     raise CidrizeError(err)
 cidrize.CidrizeError: lower bound IP greater than upper bound!
+
+CIDR TOOL
+
+The cidrize package also comes with the 'cidr' command, which has two basic operations.  
+
+Simple:
+
+    % cidr 1.2.3.4/30
+    1.2.3.4/30
+
+Verbose:
+
+    %cidr -v 1.2.3.4/30
+    Spanning CIDR:          1.2.3.4/30
+    Block Start/Network:    1.2.3.4
+    1st host:               1.2.3.5
+    Gateway:                1.2.3.6
+    Block End/Broadcast:    1.2.3.7
+    DQ Mask:                255.255.255.252
+    Cisco ACL Mask:         0.0.0.3
+    # of hosts:             2
+    Explicit CIDR blocks:   1.2.3.4/30
+
+And that's that!

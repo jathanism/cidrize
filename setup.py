@@ -12,7 +12,7 @@ from cidrize import __version__
 
 if sys.version_info[:2] < (2, 4):
     print "This package requires Python 2.4+. Sorry!"
-    sys.exit(-11)
+    sys.exit(-1)
 
 class CleanCommand(Command):
     description = "cleans up non-package files. (dist, build, etc.)"
@@ -36,6 +36,7 @@ setup(
     author = 'Jathan McCollum',
     author_email = 'jathan+bitbucket@gmail.com',
     py_modules = ['cidrize'],
+    scripts = ['scripts/cidr'],
     install_requires=['netaddr>=0.7.4', 'pyparsing>=1.5.2'],
     keywords = [
             'Networking', 'Systems Administration', 'IANA', 'IEEE', 'CIDR', 'IP',
