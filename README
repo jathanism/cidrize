@@ -44,8 +44,12 @@ Old-fashioned CIDR
 >>> cidrize("1.2.3.4")
 [IPNetwork('1.2.3.4/32')]
 
-Hyphenated range
+Hyphenated range (default, strict=False)
 >>> cidrize("2.4.6.8-2.4.6.80")
+[IPNetwork('2.4.6.0/25')]
+
+Hyphenated range non-strict (strict=True)
+>>> cidrize("2.4.6.8-2.4.6.80", strict=False)
 [IPNetwork('2.4.6.8/29'), IPNetwork('2.4.6.16/28'), IPNetwork('2.4.6.32/27'), IPNetwork('2.4.6.64/28'), IPNetwork('2.4.6.80/32')]
 
 Wildcard 
@@ -54,8 +58,7 @@ Wildcard
 
 Bracketed range
 >>> cidrize("21.43.180.1[40-99]")
-[IPNetwork('21.43.180.140/30'), IPNetwork('21.43.180.144/28'), IPNetwork('21.43.180.160/27'), 
-IPNetwork('21.43.180.192/29')]
+[IPNetwork('21.43.180.140/30'), IPNetwork('21.43.180.144/28'), IPNetwork('21.43.180.160/27'), IPNetwork('21.43.180.192/29')]
 
 Bad!
 >>> cidrize("1.2.3.38/40")
