@@ -1,3 +1,11 @@
+0.4 - 2010-07-15
+- Added normalize_address() to cleanup non-standard IP strings (e.g. unicode).
+- Added normalize_address to __all__.
+- Added netaddr_to_ipy() to turn a list of netaddr objects into IPy objects.
+- cidrize() can now translate keywords such as "any" or "internet" into 0.0.0.0/0.
+- cidrize() now defaults to loose parsing & will return a spanning CIDR; you may 
+  negate this behavior by passing strict=True.
+
 0.3.1 - 2010-05-01
 - Added unittests, however weak they may be.
 
@@ -20,3 +28,4 @@
 
 0.1 - 2010-02-19
 - Initial release       
+
