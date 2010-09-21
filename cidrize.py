@@ -23,11 +23,12 @@ from pyparsing import (Group, Literal, Optional, ParseResults, Word, nestedExpr,
 import re
 import sys
 
-__version__ = '0.4'
+__version__ = '0.4.1'
 __author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
 DEBUG = False
-EVERYTHING = ['internet at large', '*', 'all', 'any', 'internet', '0.0.0.0']
+EVERYTHING = ['internet at large', '*', 'all', 'any', 'internet', '0.0.0.0',
+              '0.0.0.0-255.255.255.255']
 
 # Exports
 __all__ = ('cidrize', 'CidrizeError', 'dump', 'normalize_address',)
@@ -132,8 +133,13 @@ def cidrize(ipaddr, strict=False, modular=True):
     """
     ip = None
     try:
+        # Parse "everything"
+        if ipaddr in EVERYTHING:
+            if DEBUG: print "Trying everything style..."
+            return [IPNetwork('0.0.0.0/0')]
+
         # Parse old-fashioned CIDR notation
-        if re.match("\d+\.\d+\.\d+\.\d+(?:\/\d+)?$", ipaddr):
+        elif re.match("\d+\.\d+\.\d+\.\d+(?:\/\d+)?$", ipaddr):
             if DEBUG: print "Trying CIDR style..."
             ip = IPNetwork(ipaddr)
             return [ip.cidr]
@@ -168,10 +174,6 @@ def cidrize(ipaddr, strict=False, modular=True):
             if DEBUG: print "Trying bracket style..."
             return parse_brackets(ipaddr).cidrs()
 
-        # Parse "everything"
-        elif ipaddr in EVERYTHING:
-            if DEBUG: print "Trying everything style..."
-            return [IPNetwork('0.0.0.0/0')]
 
     except (AddrFormatError, TypeError), err:
         if modular:
