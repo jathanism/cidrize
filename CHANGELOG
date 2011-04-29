@@ -1,3 +1,9 @@
+0.5 - 2011-04-29
+- Added a feature to parse a comma-separted input string. New parse_commas() function to do this.
+- Modified most parsing methods to accept strict vs. loose parsing except where it doesn't make 
+  sense (e.g. CIDR will always be strict).
+- Added optimize_network_range() to do exactly that based on a specified usage ratio.
+
 0.4.1 - 2010-09-21
 - Re-arranged parsing order inside of cidrize(); will now parse EVERYTHING FIRST.
 - Added '0.0.0.0-255.255.255.255' to EVERYTHING

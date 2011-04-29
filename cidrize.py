@@ -4,9 +4,8 @@
 #
 # module cidrize.py
 #
-# Copyright (c) 2010 Jathan McCollum
+# Copyright (c) 2010-2011 Jathan McCollum
 #
-
 
 """
 Intelligently take IPv4 addresses, CIDRs, ranges, and wildcard matches to attempt
@@ -17,21 +16,28 @@ The cidrize() function is the public interface. The module may also be run
 interactively for debugging purposes.
 """
 
-
+import itertools
 from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange, IPSet, spanning_cidr,)
 from pyparsing import (Group, Literal, Optional, ParseResults, Word, nestedExpr, nums,)
 import re
 import sys
 
-__version__ = '0.4.1'
+__version__ = '0.5'
 __author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
+# Setup
 DEBUG = False
 EVERYTHING = ['internet at large', '*', 'all', 'any', 'internet', '0.0.0.0',
-              '0.0.0.0-255.255.255.255']
+              '0.0.0.0/0', '0.0.0.0-255.255.255.255']
+BRACKET_PATTERNS = (
+    r"(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]", # parses '1.2.3.4[5-9]'
+    r"(.*?)\.[\[\{\(](.*)[\)\}\]]", # parses '1.2.3.[57]'
+)
+
 
 # Exports
-__all__ = ('cidrize', 'CidrizeError', 'dump', 'normalize_address',)
+__all__ = ('cidrize', 'CidrizeError', 'dump', 'normalize_address',
+           'optimize_network_usage')
 
 
 # Awesome exceptions
@@ -78,17 +84,42 @@ def parse_brackets(_input):
     first, last = enders[0], enders[1]
     return IPRange(prefix + first, prefix + last)
 
-def cidrize(ipaddr, strict=False, modular=True):
+def parse_commas(_input, **kwargs):
+    """
+    This will break up a comma-separated input string of assorted inputs, run them through
+    cidrize(), flatten the list, and return the list. If any item in the list
+    fails, it will allow the exception to pass through as if it were parsed
+    individually. All objects must parse or nothing is returned.
+
+    Example:
+
+    @param _input: A comma-separated string of IP address patterns.
+    """
+    # Clean whitespace before we process
+    _input = _input.replace(' ', '').strip()
+    items = _input.split(',')
+
+    # Possibly nested depending on input, so we'll run it thru itertools.chain
+    # to flatten it. Then we make it a IPSet to optimize adjacencies and finally
+    # return the list of CIDRs within the IPSet
+    ipiter = (cidrize(ip, **kwargs) for ip in items) 
+    flatiter = itertools.chain.from_iterable(ipiter)
+    ipset = IPSet(flatiter)
+
+    return ipset.iter_cidrs()
+
+def cidrize(ipstr, strict=False, modular=True):
     """
     This function tries to determine the best way to parse IP addresses correctly & has
     all the logic for trying to do the right thing!
 
     Input can be several formats:
-        192.0.2.18     
-        192.0.2.64/26  
-        192.0.2.80-192.0.2.85
-        192.0.2.170-175
-        192.0.2.8[0-5]
+        '192.0.2.18'
+        '192.0.2.64/26'  
+        '192.0.2.80-192.0.2.85'
+        '192.0.2.170-175'
+        '192.0.2.8[0-5]'
+        '192.0.2.170-175, 192.0.2.80-192.0.2.85, 192.0.2.64/26'
 
     Hyphenated ranges do not need to form a CIDR block. Netaddr does most of 
     the heavy lifting for us here.
@@ -105,7 +136,8 @@ def cidrize(ipaddr, strict=False, modular=True):
         * parsing exceptions will raise a CidrizeError (modular=True).
         * results will be returned as a spanning CIDR (strict=False).
 
-    @modular - Set to False to cause exceptions to be stripped & the error text will be 
+    @param ipstr: IP string to be parsed.
+    @param modular: Set to False to cause exceptions to be stripped & the error text will be 
     returned as a list. This is intended for use with scripts or APIs out-of-the box.
 
     Example:
@@ -120,7 +152,7 @@ def cidrize(ipaddr, strict=False, modular=True):
         >>> c.cidrize('1.2.3.4-1.2.3.1099', modular=False)
         ["base address '1.2.3.1099' is not IPv4"]
 
-    @strict - Set to True to return explicit networks based on start/end addresses.
+    @param strict: Set to True to return explicit networks based on start/end addresses.
 
     Example:
         >>> import cidrize as c
@@ -132,53 +164,119 @@ def cidrize(ipaddr, strict=False, modular=True):
     
     """
     ip = None
+
+    # Short-circuit to parse commas since it calls back here anyway
+    if ',' in ipstr:
+        return parse_commas(ipstr, strict=strict, modular=modular)
+
+    # Otherwise try everything else
     try:
-        # Parse "everything"
-        if ipaddr in EVERYTHING:
-            if DEBUG: print "Trying everything style..."
+        # Parse "everything" & immediately return; strict/loose doesn't apply
+        if ipstr in EVERYTHING:
+            if DEBUG: 
+                print "Trying everything style..."
+
             return [IPNetwork('0.0.0.0/0')]
 
-        # Parse old-fashioned CIDR notation
-        elif re.match("\d+\.\d+\.\d+\.\d+(?:\/\d+)?$", ipaddr):
-            if DEBUG: print "Trying CIDR style..."
-            ip = IPNetwork(ipaddr)
+        # Parse old-fashioned CIDR notation & immediately return; strict/loose doesn't apply
+        elif re.match("\d+\.\d+\.\d+\.\d+(?:\/\d+)?$", ipstr):
+            if DEBUG: 
+                print "Trying CIDR style..."
+
+            ip = IPNetwork(ipstr)
             return [ip.cidr]
 
         # Parse 1.2.3.118-1.2.3.121 range style
-        elif re.match("\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$", ipaddr):
-            if DEBUG: print "Trying range style..."
+        elif re.match("\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$", ipstr):
+            if DEBUG: 
+                print "Trying range style..."
         
-            start, finish = ipaddr.split('-')
+            start, finish = ipstr.split('-')
             ip = IPRange(start, finish)
             if DEBUG:
                 print ' start:', start
                 print 'finish:', finish
                 print ip
 
-            # Expand ranges like 1.2.3.1-1.2.3.254 to entire network. For some
-            # reason people do this thinking they are being smart so you end up
-            # with lots of subnets instead of one big supernet.
-            #if IPAddress(ip.first).words[-1] == 1 and IPAddress(ip.last).words[-1] == 254:
-            if not strict:
-                return [spanning_cidr(ip)]
-            else:
-                return ip.cidrs()
+            result = ip
 
         # Parse 1.2.3.* glob style 
-        elif re.match("\d+\.\d+\.\d+\.\*$", ipaddr):
-            if DEBUG: print "Trying glob style..."
-            return [spanning_cidr(IPGlob(ipaddr))]
+        elif re.match("\d+\.\d+\.\d+\.\*$", ipstr):
+            if DEBUG: 
+                print "Trying glob style..."
+            ipglob = IPGlob(ipstr)
+            result = spanning_cidr(ipglob)
         
         # Parse 1.2.3.4[5-9] bracket style as a last resort
-        elif re.match("(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]", ipaddr) or re.match("(.*?)\.(\d+)\-(\d+)$", ipaddr):
-            if DEBUG: print "Trying bracket style..."
-            return parse_brackets(ipaddr).cidrs()
+        elif re.match("(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]", ipstr) or re.match("(.*?)\.(\d+)\-(\d+)$", ipstr):
+            if DEBUG: 
+                print "Trying bracket style..."
+            result = parse_brackets(ipstr)
 
+        # Logic to honor strict/loose. 
+        if not strict:
+            return [spanning_cidr(result)]
+        else:
+            try:
+                return result.cidrs() # IPGlob and IPRange have .cidrs()
+            except AttributeError as err:
+                return result.cidr    # IPNetwork has .cidr
 
     except (AddrFormatError, TypeError), err:
         if modular:
             raise CidrizeError(err)
         return [str(err)]
+
+def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
+    """
+    Parses the input string and then calculates the subnet usage percentage. If over
+    the threshold it will return a loose result, otherwise it returns strict.
+
+    @param ipstr: IP string to be parsed.
+    @param threshold: The percentage of the network usage required to return a
+    loose result. 
+    @param verbose: Toggle verbosity.
+
+    Example of default behavior using 0.9 (90% usage) threshold:
+        >>> import cidrize
+        >>> cidrize.optimize_network_range('10.20.30.40-50', verbose=True)
+        Subnet usage ratio: 0.34375; Threshold: 0.9
+        Under threshold, IP Parse Mode: STRICT
+        [IPNetwork('10.20.30.40/29'), IPNetwork('10.20.30.48/31'), IPNetwork('10.20.30.50/32')]
+
+    Excample using a 0.3 (30% threshold):
+        >>> import cidrize
+        >>> cidrize.optimize_network_range('10.20.30.40-50', threshold=0.3, verbose=True)
+        Subnet usage ratio: 0.34375; Threshold: 0.3
+        Over threshold, IP Parse Mode: LOOSE
+        [IPNetwork('10.20.30.32/27')]
+
+    """
+    if threshold > 1 or threshold < 0: 
+        raise CidrizeError('Threshold must be from 0.0 to 1.0')
+
+    # Can't optimize 0.0.0.0/0!
+    if ipstr in EVERYTHING:
+        return cidrize(ipstr)
+
+    loose = IPSet(cidrize(ipstr))
+    strict = IPSet(cidrize(ipstr, strict=True))
+    ratio = float(len(strict)) / float(len(loose))
+
+    if verbose:
+        print 'Subnet usage ratio: %s; Threshold: %s' % (ratio, threshold)
+
+    if ratio >= threshold:
+        if verbose:
+            print 'Over threshold, IP Parse Mode: LOOSE'
+        result = loose.iter_cidrs()
+    else:
+        if verbose:
+            print 'Under threshold, IP Parse Mode: STRICT'
+        result = strict.iter_cidrs()
+
+    return result
+    
 
 def output_str(cidr, sep=', '):
     """Returns @sep separated string of constituent CIDR blocks."""
@@ -289,12 +387,12 @@ Cidrize parses IP address notation and returns valid CIDR blocks.''')
     Hyphenated ranges do not need to form a CIDR block. Netaddr does most of 
     the heavy lifting for us here.
 
-    Input can NOT be:
+    Input can NOT be (yet):
 
         192.0.2.0 0.0.0.255 (hostmask)
         192.0.2.0 255.255.255.0 (netmask)
 
-    Does NOT accept network or host mask notation, so don't bother trying.
+    Does NOT accept network or host mask notation.
     """
 
     opts, args = parser.parse_args(argv)
@@ -309,14 +407,20 @@ Cidrize parses IP address notation and returns valid CIDR blocks.''')
 
     if opts.help or len(args) == 1:
         phelp()
-        print 'ERROR: You must specify an ip address. See usage information above!!'
-        sys.exit(-1)
+        sys.exit('ERROR: You must specify an ip address. See usage information above!!')
     else:
         opts.ip = args[1]
+
+    if ',' in opts.ip:
+        phelp()
+        sys.exit("ERROR: Comma-separated arguments aren't supported!")
 
     return opts, args
 
 def main():
+    """
+    Used by the 'cidr' command that is bundled with the package.
+    """
     global opts
     opts, args = parse_args(sys.argv)
 
@@ -326,10 +430,10 @@ def main():
         print "ARGS:"
         print args
 
-    ipaddr = opts.ip
+    ipstr = opts.ip
 
     try:
-        cidr = cidrize(ipaddr, modular=False)
+        cidr = cidrize(ipstr, modular=False)
         if cidr:
             if opts.verbose:
                 print dump(cidr),
