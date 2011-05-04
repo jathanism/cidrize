@@ -10,7 +10,6 @@ class TestParseBrackets(unittest.TestCase):
         expected = IPRange('1.2.3.118', '1.2.3.121')
         _input = '1.2.3.1[18-21]'
         self.assertEqual(expected, cidrize.parse_brackets(_input))
-        #assert False # TODO: implement your test here
 
 class TestCidrize(unittest.TestCase):
     def setUp(self):
@@ -51,6 +50,10 @@ class TestCidrize(unittest.TestCase):
         expected = [IPNetwork('1.2.3.112/28')]
         _input = '1.2.3.1[18-21]'
         self.assertEqual(expected, self.test(_input, strict=False))
+
+    def test_hostname(self):
+        _input = 'jathan.com'
+        self.assertRaises(cidrize.CidrizeError, self.test, _input)
 
 class TestDump(unittest.TestCase):
     def test_dump(self):

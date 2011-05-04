@@ -22,7 +22,7 @@ from pyparsing import (Group, Literal, Optional, ParseResults, Word, nestedExpr,
 import re
 import sys
 
-__version__ = '0.5'
+__version__ = '0.5.1'
 __author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
 # Setup
@@ -48,6 +48,7 @@ class NotGlobStyleError(CidrizeError): pass
 class NotBracketStyleError(CidrizeError): pass
 
 
+# Functions
 def parse_brackets(_input):
     """
     Best effort to break down UNIX wildcard style ranges like
@@ -107,6 +108,13 @@ def parse_commas(_input, **kwargs):
     ipset = IPSet(flatiter)
 
     return ipset.iter_cidrs()
+
+cidr_re = re.compile(r"\d+\.\d+\.\d+\.\d+(?:\/\d+)?$")
+range_re = re.compile(r"\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$")
+glob_re = re.compile(r"\d+\.\d+\.\d+\.\*$")
+brack1_re = re.compile(r"(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]")
+brack2_re = re.compile(r"(.*?)\.(\d+)\-(\d+)$")
+hostname_re = re.compile(r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?)', re.IGNORECASE)
 
 def cidrize(ipstr, strict=False, modular=True):
     """
@@ -169,6 +177,10 @@ def cidrize(ipstr, strict=False, modular=True):
     if ',' in ipstr:
         return parse_commas(ipstr, strict=strict, modular=modular)
 
+    # Short-circuit for hostnames (we're assuming first char is alpha)
+    if hostname_re.match(ipstr):
+        raise CidrizeError('Cannot parse hostnames!')
+
     # Otherwise try everything else
     try:
         # Parse "everything" & immediately return; strict/loose doesn't apply
@@ -179,7 +191,8 @@ def cidrize(ipstr, strict=False, modular=True):
             return [IPNetwork('0.0.0.0/0')]
 
         # Parse old-fashioned CIDR notation & immediately return; strict/loose doesn't apply
-        elif re.match("\d+\.\d+\.\d+\.\d+(?:\/\d+)?$", ipstr):
+        #elif re.match("\d+\.\d+\.\d+\.\d+(?:\/\d+)?$", ipstr):
+        elif cidr_re.match(ipstr):
             if DEBUG: 
                 print "Trying CIDR style..."
 
@@ -187,7 +200,8 @@ def cidrize(ipstr, strict=False, modular=True):
             return [ip.cidr]
 
         # Parse 1.2.3.118-1.2.3.121 range style
-        elif re.match("\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$", ipstr):
+        #elif re.match("\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$", ipstr):
+        elif range_re.match(ipstr):
             if DEBUG: 
                 print "Trying range style..."
         
@@ -201,17 +215,23 @@ def cidrize(ipstr, strict=False, modular=True):
             result = ip
 
         # Parse 1.2.3.* glob style 
-        elif re.match("\d+\.\d+\.\d+\.\*$", ipstr):
+        #elif re.match("\d+\.\d+\.\d+\.\*$", ipstr):
+        elif glob_re.match(ipstr):
             if DEBUG: 
                 print "Trying glob style..."
             ipglob = IPGlob(ipstr)
             result = spanning_cidr(ipglob)
         
         # Parse 1.2.3.4[5-9] bracket style as a last resort
-        elif re.match("(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]", ipstr) or re.match("(.*?)\.(\d+)\-(\d+)$", ipstr):
+        #elif re.match("(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]", ipstr) or re.match("(.*?)\.(\d+)\-(\d+)$", ipstr):
+        elif brack1_re.match(ipstr) or brack2_re.match(ipstr):
             if DEBUG: 
                 print "Trying bracket style..."
             result = parse_brackets(ipstr)
+
+        # This will probably fail 100% of the time. By design.
+        else:
+            result = ipstr
 
         # Logic to honor strict/loose. 
         if not strict:
