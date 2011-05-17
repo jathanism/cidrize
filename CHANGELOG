@@ -1,3 +1,7 @@
+0.5.2 - 2011-05-17
+- Reworked the way bracket parsing works; removed PyParsing as a dependency (too slow)
+- Broke hyphenated (4th octect only) parsing into its own function
+
 0.5.1 - 2011-05-03
 - Fixed a bug in cidrize() when hostnames were passed in.  Now explicitly checking for hostnames and
   raising an exception.

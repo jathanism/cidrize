@@ -41,6 +41,17 @@ class TestCidrize(unittest.TestCase):
         _input = '1.2.3.*'
         self.assertEqual(expected, self.test(_input))
 
+    def test_hyphen_style_strict(self):
+        expected = [IPNetwork('1.2.3.4/30'), IPNetwork('1.2.3.8/29'),
+                    IPNetwork('1.2.3.16/30'), IPNetwork('1.2.3.20/32')]
+        _input = '1.2.3.4-20'
+        self.assertEqual(expected, self.test(_input, strict=True))
+
+    def test_hyphen_style_loose(self):
+        expected = [IPNetwork('1.2.3.0/27')]
+        _input = '1.2.3.4-20'
+        self.assertEqual(expected, self.test(_input, strict=False))
+
     def test_bracket_style_strict(self):
         expected = [IPNetwork('1.2.3.118/31'), IPNetwork('1.2.3.120/31')]
         _input = '1.2.3.1[18-21]'
@@ -53,6 +64,10 @@ class TestCidrize(unittest.TestCase):
 
     def test_hostname(self):
         _input = 'jathan.com'
+        self.assertRaises(cidrize.CidrizeError, self.test, _input)
+
+    def test_failure(self):
+        _input = '1.2.3.4]'
         self.assertRaises(cidrize.CidrizeError, self.test, _input)
 
 class TestDump(unittest.TestCase):

@@ -18,11 +18,10 @@ interactively for debugging purposes.
 
 import itertools
 from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange, IPSet, spanning_cidr,)
-from pyparsing import (Group, Literal, Optional, ParseResults, Word, nestedExpr, nums,)
 import re
 import sys
 
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 __author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
 # Setup
@@ -34,6 +33,14 @@ BRACKET_PATTERNS = (
     r"(.*?)\.[\[\{\(](.*)[\)\}\]]", # parses '1.2.3.[57]'
 )
 
+# Pre-compiled re patterns
+cidr_re = re.compile(r"\d+\.\d+\.\d+\.\d+(?:\/\d+)?$")
+range_re = re.compile(r"\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$")
+glob_re = re.compile(r"\d+\.\d+\.\d+\.\*$")
+bracket1_re = re.compile(BRACKET_PATTERNS[0])
+bracket2_re = re.compile(BRACKET_PATTERNS[1])
+hyphen_re = re.compile(r"(.*?)\.(\d+)\-(\d+)$")
+hostname_re = re.compile(r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?)', re.IGNORECASE)
 
 # Exports
 __all__ = ('cidrize', 'CidrizeError', 'dump', 'normalize_address',
@@ -49,7 +56,7 @@ class NotBracketStyleError(CidrizeError): pass
 
 
 # Functions
-def parse_brackets(_input):
+def parse_brackets(text):
     """
     Best effort to break down UNIX wildcard style ranges like
     "1.2.3.1[18-21]" into octets append use first & last numbers of
@@ -59,31 +66,59 @@ def parse_brackets(_input):
 
     Returns an IPRange object.
     """
-    # pyparsing setup
-    integer = Word(nums)
-    dash = Literal("-").suppress()
-    intrange = integer + dash + integer
-    range_or_int = (intrange ^ integer)
-    sequence = Group(intrange) | range_or_int | nestedExpr("[", "]", range_or_int)
-    octet = Optional(sequence) + Optional(integer) + Optional(sequence) + Optional(integer)
-    address = octet + "." + octet + "." + octet + "." + octet
+    for pat in BRACKET_PATTERNS:
+        b_re = re.compile(pat)
+        match = b_re.match(text)
+        if match is None:
+            continue
 
-    if DEBUG: print "    IN:", _input
-    parsed = address.searchString(_input)[0]
-    if DEBUG: print "PARSED:", parsed
+        parts = match.groups()
+        # '1.2.3.4[5-9] style
+        if len(parts) == 3:
+            if DEBUG: 
+                print parts
 
-    prefix = ''
-    enders = []
+            prefix, subnet, enders = parts
+            network = '.'.join((prefix, subnet))
 
-    if type(parsed[-1]) == ParseResults:
-        prefix = ''.join(parsed[:-1])
-        enders = parsed[-1]
-        if DEBUG:
-            print "PREFIX:", prefix
-            print "ENDERS:", enders
+        # '1.2.3.[5-9] style
+        elif len(parts) == 2:
+            prefix, enders = parts
+            network = prefix + '.'
 
-    first, last = enders[0], enders[1]
-    return IPRange(prefix + first, prefix + last)
+        else:
+            raise NotBracketStyleError("Bracketed style not parseable: '%s'" % text)
+
+        # Split hyphenated [x-y]
+        if '-' in enders:
+            first, last = enders.split('-')
+
+        # Get first/last from [xy] - This really only works with single
+        # digits
+        elif len(enders) >= 2:
+            # Creating a set and sorting to ensure that [987] won't throw
+            # an exception. Might be too inclusive, but screw it.
+            uniques = sorted(set(enders))
+            first = uniques[0] 
+            last = uniques[-1]
+
+        return IPRange(network + first, network + last)
+
+    return None
+
+def parse_hyphen(text):
+    """
+    Parses a hyphen in the last octet, e.g. '1.2.3.4-70'
+    """
+    match = hyphen_re.match(text)
+    if match is None:
+        return
+
+    parts = match.groups()
+    prefix, start, finish = parts
+    network = prefix + '.'
+
+    return IPRange(network + start, network + finish)
 
 def parse_commas(_input, **kwargs):
     """
@@ -109,13 +144,6 @@ def parse_commas(_input, **kwargs):
 
     return ipset.iter_cidrs()
 
-cidr_re = re.compile(r"\d+\.\d+\.\d+\.\d+(?:\/\d+)?$")
-range_re = re.compile(r"\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$")
-glob_re = re.compile(r"\d+\.\d+\.\d+\.\*$")
-brack1_re = re.compile(r"(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]")
-brack2_re = re.compile(r"(.*?)\.(\d+)\-(\d+)$")
-hostname_re = re.compile(r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?)', re.IGNORECASE)
-
 def cidrize(ipstr, strict=False, modular=True):
     """
     This function tries to determine the best way to parse IP addresses correctly & has
@@ -127,6 +155,9 @@ def cidrize(ipstr, strict=False, modular=True):
         '192.0.2.80-192.0.2.85'
         '192.0.2.170-175'
         '192.0.2.8[0-5]'
+        '192.0.2.[0-29]'
+        '192.168.4.6[1234]'
+        '1.2.3.*'
         '192.0.2.170-175, 192.0.2.80-192.0.2.85, 192.0.2.64/26'
 
     Hyphenated ranges do not need to form a CIDR block. Netaddr does most of 
@@ -136,7 +167,7 @@ def cidrize(ipstr, strict=False, modular=True):
         192.0.2.0 0.0.0.255 (hostmask)
         192.0.2.0 255.255.255.0 (netmask)
 
-    Does NOT accept network or host mask notation, so don't bother trying.
+    Does NOT accept network or host mask notation at this time!
 
     Returns a list of consolidated netaddr objects. 
 
@@ -191,7 +222,6 @@ def cidrize(ipstr, strict=False, modular=True):
             return [IPNetwork('0.0.0.0/0')]
 
         # Parse old-fashioned CIDR notation & immediately return; strict/loose doesn't apply
-        #elif re.match("\d+\.\d+\.\d+\.\d+(?:\/\d+)?$", ipstr):
         elif cidr_re.match(ipstr):
             if DEBUG: 
                 print "Trying CIDR style..."
@@ -200,7 +230,6 @@ def cidrize(ipstr, strict=False, modular=True):
             return [ip.cidr]
 
         # Parse 1.2.3.118-1.2.3.121 range style
-        #elif re.match("\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$", ipstr):
         elif range_re.match(ipstr):
             if DEBUG: 
                 print "Trying range style..."
@@ -214,24 +243,28 @@ def cidrize(ipstr, strict=False, modular=True):
 
             result = ip
 
+        # Parse 1.2.3.4-70 hyphen style
+        elif hyphen_re.match(ipstr):
+            if DEBUG:
+                print "Trying hypnen style..."
+            result = parse_hyphen(ipstr)
+
         # Parse 1.2.3.* glob style 
-        #elif re.match("\d+\.\d+\.\d+\.\*$", ipstr):
         elif glob_re.match(ipstr):
             if DEBUG: 
                 print "Trying glob style..."
             ipglob = IPGlob(ipstr)
             result = spanning_cidr(ipglob)
         
-        # Parse 1.2.3.4[5-9] bracket style as a last resort
-        #elif re.match("(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]", ipstr) or re.match("(.*?)\.(\d+)\-(\d+)$", ipstr):
-        elif brack1_re.match(ipstr) or brack2_re.match(ipstr):
+        # Parse 1.2.3.4[5-9] or 1.2.3.[49] bracket style as a last resort
+        elif bracket1_re.match(ipstr) or bracket2_re.match(ipstr):
             if DEBUG: 
                 print "Trying bracket style..."
             result = parse_brackets(ipstr)
 
         # This will probably fail 100% of the time. By design.
         else:
-            result = ipstr
+            raise CidrizeError("Could not determine parse style for '%s'" % ipstr)
 
         # Logic to honor strict/loose. 
         if not strict:
@@ -296,7 +329,6 @@ def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
         result = strict.iter_cidrs()
 
     return result
-    
 
 def output_str(cidr, sep=', '):
     """Returns @sep separated string of constituent CIDR blocks."""
@@ -398,11 +430,15 @@ Cidrize parses IP address notation and returns valid CIDR blocks.''')
 
     Input can be several formats:
 
-        192.0.2.18     
-        192.0.2.64/26  
-        192.0.2.80-192.0.2.85
-        192.0.2.170-175
-        192.0.2.8[0-5]
+        '192.0.2.18'
+        '192.0.2.64/26'  
+        '192.0.2.80-192.0.2.85'
+        '192.0.2.170-175'
+        '192.0.2.8[0-5]'
+        '192.0.2.[0-29]'
+        '192.168.4.6[1234]'
+        '1.2.3.*'
+        '192.0.2.170-175, 192.0.2.80-192.0.2.85, 192.0.2.64/26'
 
     Hyphenated ranges do not need to form a CIDR block. Netaddr does most of 
     the heavy lifting for us here.
