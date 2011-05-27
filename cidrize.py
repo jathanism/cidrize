@@ -4,8 +4,6 @@
 #
 # module cidrize.py
 #
-# Copyright (c) 2010-2011 Jathan McCollum
-#
 
 """
 Intelligently take IPv4 addresses, CIDRs, ranges, and wildcard matches to attempt
