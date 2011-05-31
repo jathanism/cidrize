@@ -18,14 +18,14 @@ Input is very flexible and can be of any of the following formats::
     192.0.2.8[0-5]
     192.0.2.[5678]
 
-Hyphenated ranges do not need to form a CIDR block but the starting number must be of lower value than the end. The netaddr module does most of the heavy lifting for us here.
+Hyphenated ranges do not need to form a CIDR block but the starting number must be of lower value than the end. The ``netaddr`` module does most of the heavy lifting for us here.
 
 Unsupported formats
 -------------------
 
 Network mask (e.g. 192.0.2.0 255.255.255.0) and host mask (aka reverse mask, 192.0.2.0 0.0.0.255) notation are not accepted at this time.
 
-The cidrize function returns a list of consolidated ``netaddr`` objects. By default parsing exceptions will raise a ``CidrizeError`` (with default argument of ``modular=True``). You may pass ``modular=False`` to cause exceptions to be stripped and the error text will be returned as a list. This is intended for use with scripts or APIs where receiving exceptions would not be preferred.
+The cidrize function returns a list of consolidated ``netaddr.IPNetwork`` objects. By default parsing exceptions will raise a ``CidrizeError`` (with default argument of ``modular=True``). You may pass ``modular=False`` to cause exceptions to be stripped and the error text will be returned as a list. This is intended for use with scripts or APIs where receiving exceptions would not be preferred.
 
 The module may also be run as a script for debugging purposes.
 
@@ -33,9 +33,8 @@ The module may also be run as a script for debugging purposes.
 Dependencies
 ============
 
-:netaddr: Pythonic manipulation of IPv4, IPv6, CIDR, 
+:`netaddr <http://pypi.python.org/pypi/netaddr/>`_: Pythonic manipulation of IPv4, IPv6, CIDR, 
   EUI and MAC network addresses
-  http://pypi.python.org/pypi/netaddr/
 
 =====
 Usage 
@@ -63,7 +62,9 @@ IPNetwork('2.4.6.80/32')]
 
 Wildcard
 --------
->>> c("15.63.148.*")
+You may provide wildcards using asterisks. This is limited to the 4th and final octet only.
+
+>>> cidrize("15.63.148.*")
 [IPNetwork('15.63.148.0/24')]
 
 Bracketed range
@@ -74,6 +75,8 @@ IPNetwork('21.43.180.160/27'), IPNetwork('21.43.180.192/29')]
 
 Bad!
 ----
+Bad CIDR prefixes are rejected outright.
+
 >>> cidrize("1.2.3.38/40")
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
@@ -83,7 +86,9 @@ cidrize.CidrizeError: CIDR prefix /40 out of range for IPv4!
 
 Wack range?!
 ------------
->>> c("1.2.3.4-0")
+Ranges must always start from lower to upper bound, or this happens:
+
+>>> cidrize("1.2.3.4-0")
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
   File "cidrize.py", line 145, in cidrize
