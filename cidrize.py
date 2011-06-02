@@ -19,24 +19,19 @@ from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange, IPS
 import re
 import sys
 
-__version__ = '0.5.2'
+__version__ = '0.5.3'
 __author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
 # Setup
 DEBUG = False
 EVERYTHING = ['internet at large', '*', 'all', 'any', 'internet', '0.0.0.0',
               '0.0.0.0/0', '0.0.0.0-255.255.255.255']
-BRACKET_PATTERNS = (
-    r"(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]", # parses '1.2.3.4[5-9]'
-    r"(.*?)\.[\[\{\(](.*)[\)\}\]]", # parses '1.2.3.[57]'
-)
 
-# Pre-compiled re patterns
+# Pre-compiled re patterns. You know, for speed!
 cidr_re = re.compile(r"\d+\.\d+\.\d+\.\d+(?:\/\d+)?$")
 range_re = re.compile(r"\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$")
 glob_re = re.compile(r"\d+\.\d+\.\d+\.\*$")
-bracket1_re = re.compile(BRACKET_PATTERNS[0])
-bracket2_re = re.compile(BRACKET_PATTERNS[1])
+bracket_re = re.compile(r"(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]") # parses '1.2.3.4[5-9]' or '1.2.3.[57]'
 hyphen_re = re.compile(r"(.*?)\.(\d+)\-(\d+)$")
 hostname_re = re.compile(r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?)', re.IGNORECASE)
 
@@ -64,45 +59,41 @@ def parse_brackets(text):
 
     Returns an IPRange object.
     """
-    for pat in BRACKET_PATTERNS:
-        b_re = re.compile(pat)
-        match = b_re.match(text)
-        if match is None:
-            continue
+    match = bracket_re.match(text)
+    if match is None:
+        return None
 
-        parts = match.groups()
-        # '1.2.3.4[5-9] style
-        if len(parts) == 3:
-            if DEBUG: 
-                print parts
+    parts = match.groups()
+    # '1.2.3.4[5-9] style
+    if len(parts) == 3:
+        if DEBUG: 
+            print parts
 
-            prefix, subnet, enders = parts
-            network = '.'.join((prefix, subnet))
+        prefix, subnet, enders = parts
+        network = '.'.join((prefix, subnet))
 
-        # '1.2.3.[5-9] style
-        elif len(parts) == 2:
-            prefix, enders = parts
-            network = prefix + '.'
+    # '1.2.3.[5-9] style
+    elif len(parts) == 2:
+        prefix, enders = parts
+        network = prefix + '.'
 
-        else:
-            raise NotBracketStyleError("Bracketed style not parseable: '%s'" % text)
+    else:
+        raise NotBracketStyleError("Bracketed style not parseable: '%s'" % text)
 
-        # Split hyphenated [x-y]
-        if '-' in enders:
-            first, last = enders.split('-')
+    # Split hyphenated [x-y]
+    if '-' in enders:
+        first, last = enders.split('-')
 
-        # Get first/last from [xy] - This really only works with single
-        # digits
-        elif len(enders) >= 2:
-            # Creating a set and sorting to ensure that [987] won't throw
-            # an exception. Might be too inclusive, but screw it.
-            uniques = sorted(set(enders))
-            first = uniques[0] 
-            last = uniques[-1]
+    # Get first/last from [xy] - This really only works with single
+    # digits
+    elif len(enders) >= 2:
+        # Creating a set and sorting to ensure that [987] won't throw
+        # an exception. Might be too inclusive, but screw it.
+        uniques = sorted(set(enders))
+        first = uniques[0] 
+        last = uniques[-1]
 
-        return IPRange(network + first, network + last)
-
-    return None
+    return IPRange(network + first, network + last)
 
 def parse_hyphen(text):
     """
@@ -118,7 +109,7 @@ def parse_hyphen(text):
 
     return IPRange(network + start, network + finish)
 
-def parse_commas(_input, **kwargs):
+def parse_commas(ipstr, **kwargs):
     """
     This will break up a comma-separated input string of assorted inputs, run them through
     cidrize(), flatten the list, and return the list. If any item in the list
@@ -127,11 +118,11 @@ def parse_commas(_input, **kwargs):
 
     Example:
 
-    @param _input: A comma-separated string of IP address patterns.
+    @param ipstr: A comma-separated string of IP address patterns.
     """
     # Clean whitespace before we process
-    _input = _input.replace(' ', '').strip()
-    items = _input.split(',')
+    ipstr = ipstr.replace(' ', '').strip()
+    items = ipstr.split(',')
 
     # Possibly nested depending on input, so we'll run it thru itertools.chain
     # to flatten it. Then we make it a IPSet to optimize adjacencies and finally
@@ -255,7 +246,7 @@ def cidrize(ipstr, strict=False, modular=True):
             result = spanning_cidr(ipglob)
         
         # Parse 1.2.3.4[5-9] or 1.2.3.[49] bracket style as a last resort
-        elif bracket1_re.match(ipstr) or bracket2_re.match(ipstr):
+        elif bracket_re.match(ipstr):
             if DEBUG: 
                 print "Trying bracket style..."
             result = parse_brackets(ipstr)

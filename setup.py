@@ -54,14 +54,13 @@ setup(
     author_email = 'jathan+bitbucket@gmail.com',
     py_modules = ['cidrize'],
     scripts = ['scripts/cidr'],
-    #install_requires=['netaddr>=0.7.4', 'pyparsing>=1.5.2'],
     install_requires=['netaddr>=0.7.4'],
     keywords = [
             'Networking', 'Systems Administration', 'IANA', 'IEEE', 'CIDR', 'IP',
             'IPv4', 'IP Address', 'Firewalls', 'Security',
     ],
     classifiers = [
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Environment :: Plugins',
         'Intended Audience :: Developers',
