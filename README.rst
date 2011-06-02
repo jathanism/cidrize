@@ -33,8 +33,7 @@ The module may also be run as a script for debugging purposes.
 Dependencies
 ============
 
-:`netaddr <http://pypi.python.org/pypi/netaddr/>`_: Pythonic manipulation of IPv4, IPv6, CIDR, 
-  EUI and MAC network addresses
+:`netaddr <http://pypi.python.org/pypi/netaddr/>`_: Pythonic manipulation of IPv4, IPv6, CIDR, EUI and MAC network addresses
 
 =====
 Usage 
