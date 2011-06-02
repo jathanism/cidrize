@@ -1,3 +1,7 @@
+0.5.3 - 2011-06-01
+- Collapsed bracket parsing RE into same pattern
+- More descriptive var name in parse_commas()
+
 0.5.2 - 2011-05-17
 - Reworked the way bracket parsing works; removed PyParsing as a dependency (too slow)
 - Broke hyphenated (4th octect only) parsing into its own function
