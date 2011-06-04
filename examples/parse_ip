@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-An script using cidrize to output IP addresses with errors/status for use with an AJAX form
+A script using cidrize to output IP addresses with errors/status for use with an AJAX form
 that is expected to strictly validate IP addresses.  
 """
 
