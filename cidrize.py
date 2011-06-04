@@ -374,10 +374,9 @@ def dump(cidr):
         print 'Got: ', cidr
         print '-' * 50 + '\n'
 
-    ip = IPAddress
-    ip_first = ip(cidr.first)
+    ip_first = IPAddress(cidr.first)
     ip_firsthost = ip_first if single else cidr.iter_hosts().next()
-    ip_gateway = ip(cidr.last - 1)
+    ip_gateway = IPAddress(cidr.last - 1)
     ip_bcast = cidr.broadcast
     ip_netmask = cidr.netmask
     ip_hostmask = cidr.hostmask
