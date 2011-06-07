@@ -1,3 +1,6 @@
+0.5.4 - 2011-06-07
+- Add ValueError to exceptions caught in cidrize() for wrapping with CidrizeError
+
 0.5.3 - 2011-06-01
 - Collapsed bracket parsing RE into same pattern
 - More descriptive var name in parse_commas()

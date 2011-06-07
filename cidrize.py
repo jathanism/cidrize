@@ -19,7 +19,7 @@ from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange, IPS
 import re
 import sys
 
-__version__ = '0.5.3'
+__version__ = '0.5.4'
 __author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
 # Setup
@@ -264,7 +264,7 @@ def cidrize(ipstr, strict=False, modular=True):
             except AttributeError as err:
                 return result.cidr    # IPNetwork has .cidr
 
-    except (AddrFormatError, TypeError), err:
+    except (AddrFormatError, TypeError, ValueError) as err:
         if modular:
             raise CidrizeError(err)
         return [str(err)]
