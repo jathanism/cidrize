@@ -52,9 +52,9 @@ Hyphenated range (default, strict=False)
 >>> cidrize("2.4.6.8-2.4.6.80")
 [IPNetwork('2.4.6.0/25')]
 
-Hyphenated range non-strict (strict=True)
+Hyphenated range strict (strict=True)
 ----------------------------------------
->>> cidrize("2.4.6.8-2.4.6.80", strict=False)
+>>> cidrize("2.4.6.8-2.4.6.80", strict=True)
 [IPNetwork('2.4.6.8/29'), IPNetwork('2.4.6.16/28'), 
 IPNetwork('2.4.6.32/27'), IPNetwork('2.4.6.64/28'), 
 IPNetwork('2.4.6.80/32')]
