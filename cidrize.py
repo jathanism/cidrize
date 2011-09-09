@@ -1,26 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#
-# module cidrize.py
-#
+__author__ = 'Jathan McCollum'
+__email__ = 'jathan+github@gmail.com'
+__version__ = '0.5.5'
 
 """
-Intelligently take IPv4 addresses, CIDRs, ranges, and wildcard matches to attempt
-return a valid list of IP addresses that can be worked with. Will automatically 
-fix bad network boundries if it can.
+Intelligently take IPv4 addresses, CIDRs, ranges, and wildcard matches to
+attempt return a valid list of IP addresses that can be worked with. Will
+automatically fix bad network boundries if it can.
 
 The cidrize() function is the public interface. The module may also be run
 interactively for debugging purposes.
 """
 
 import itertools
-from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange, IPSet, spanning_cidr,)
+from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange,
+        IPSet, spanning_cidr)
 import re
 import sys
-
-__version__ = '0.5.4'
-__author__ = 'Jathan McCollum <jathan+bitbucket@gmail.com>'
 
 # Setup
 DEBUG = False
@@ -53,7 +51,7 @@ def parse_brackets(text):
     """
     Best effort to break down UNIX wildcard style ranges like
     "1.2.3.1[18-21]" into octets append use first & last numbers of
-    bracketed range as the min/max of the 4th octet. 
+    bracketed range as the min/max of the 4th octet.
 
     This is assuming we'll only ever see [x-y] style ranges in the 4th octet.
 
@@ -66,7 +64,7 @@ def parse_brackets(text):
     parts = match.groups()
     # '1.2.3.4[5-9] style
     if len(parts) == 3:
-        if DEBUG: 
+        if DEBUG:
             print parts
 
         prefix, subnet, enders = parts
@@ -90,7 +88,7 @@ def parse_brackets(text):
         # Creating a set and sorting to ensure that [987] won't throw
         # an exception. Might be too inclusive, but screw it.
         uniques = sorted(set(enders))
-        first = uniques[0] 
+        first = uniques[0]
         last = uniques[-1]
 
     return IPRange(network + first, network + last)
@@ -127,7 +125,7 @@ def parse_commas(ipstr, **kwargs):
     # Possibly nested depending on input, so we'll run it thru itertools.chain
     # to flatten it. Then we make it a IPSet to optimize adjacencies and finally
     # return the list of CIDRs within the IPSet
-    ipiter = (cidrize(ip, **kwargs) for ip in items) 
+    ipiter = (cidrize(ip, **kwargs) for ip in items)
     flatiter = itertools.chain.from_iterable(ipiter)
     ipset = IPSet(flatiter)
 
@@ -140,7 +138,7 @@ def cidrize(ipstr, strict=False, modular=True):
 
     Input can be several formats:
         '192.0.2.18'
-        '192.0.2.64/26'  
+        '192.0.2.64/26'
         '192.0.2.80-192.0.2.85'
         '192.0.2.170-175'
         '192.0.2.8[0-5]'
@@ -149,7 +147,7 @@ def cidrize(ipstr, strict=False, modular=True):
         '1.2.3.*'
         '192.0.2.170-175, 192.0.2.80-192.0.2.85, 192.0.2.64/26'
 
-    Hyphenated ranges do not need to form a CIDR block. Netaddr does most of 
+    Hyphenated ranges do not need to form a CIDR block. Netaddr does most of
     the heavy lifting for us here.
 
     Input can NOT be:
@@ -158,14 +156,14 @@ def cidrize(ipstr, strict=False, modular=True):
 
     Does NOT accept network or host mask notation at this time!
 
-    Returns a list of consolidated netaddr objects. 
+    Returns a list of consolidated netaddr objects.
 
     Defaults:
         * parsing exceptions will raise a CidrizeError (modular=True).
         * results will be returned as a spanning CIDR (strict=False).
 
     @param ipstr: IP string to be parsed.
-    @param modular: Set to False to cause exceptions to be stripped & the error text will be 
+    @param modular: Set to False to cause exceptions to be stripped & the error text will be
     returned as a list. This is intended for use with scripts or APIs out-of-the box.
 
     Example:
@@ -189,7 +187,7 @@ def cidrize(ipstr, strict=False, modular=True):
 
         >>> c.cidrize('1.2.3.4-1.2.3.10', strict=True)
         [IPNetwork('1.2.3.4/30'), IPNetwork('1.2.3.8/31'), IPNetwork('1.2.3.10/32')]
-    
+
     """
     ip = None
 
@@ -205,14 +203,14 @@ def cidrize(ipstr, strict=False, modular=True):
     try:
         # Parse "everything" & immediately return; strict/loose doesn't apply
         if ipstr in EVERYTHING:
-            if DEBUG: 
+            if DEBUG:
                 print "Trying everything style..."
 
             return [IPNetwork('0.0.0.0/0')]
 
         # Parse old-fashioned CIDR notation & immediately return; strict/loose doesn't apply
         elif cidr_re.match(ipstr):
-            if DEBUG: 
+            if DEBUG:
                 print "Trying CIDR style..."
 
             ip = IPNetwork(ipstr)
@@ -220,9 +218,9 @@ def cidrize(ipstr, strict=False, modular=True):
 
         # Parse 1.2.3.118-1.2.3.121 range style
         elif range_re.match(ipstr):
-            if DEBUG: 
+            if DEBUG:
                 print "Trying range style..."
-        
+
             start, finish = ipstr.split('-')
             ip = IPRange(start, finish)
             if DEBUG:
@@ -238,16 +236,16 @@ def cidrize(ipstr, strict=False, modular=True):
                 print "Trying hypnen style..."
             result = parse_hyphen(ipstr)
 
-        # Parse 1.2.3.* glob style 
+        # Parse 1.2.3.* glob style
         elif glob_re.match(ipstr):
-            if DEBUG: 
+            if DEBUG:
                 print "Trying glob style..."
             ipglob = IPGlob(ipstr)
             result = spanning_cidr(ipglob)
-        
+
         # Parse 1.2.3.4[5-9] or 1.2.3.[49] bracket style as a last resort
         elif bracket_re.match(ipstr):
-            if DEBUG: 
+            if DEBUG:
                 print "Trying bracket style..."
             result = parse_brackets(ipstr)
 
@@ -255,14 +253,15 @@ def cidrize(ipstr, strict=False, modular=True):
         else:
             raise CidrizeError("Could not determine parse style for '%s'" % ipstr)
 
-        # Logic to honor strict/loose. 
+        # Logic to honor strict/loose.
         if not strict:
             return [spanning_cidr(result)]
         else:
             try:
                 return result.cidrs() # IPGlob and IPRange have .cidrs()
             except AttributeError as err:
-                return result.cidr    # IPNetwork has .cidr
+                #return result.cidr    # IPNetwork has .cidr
+                return result.cidrs()  # PyLint thinks this is IPRange
 
     except (AddrFormatError, TypeError, ValueError) as err:
         if modular:
@@ -276,7 +275,7 @@ def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
 
     @param ipstr: IP string to be parsed.
     @param threshold: The percentage of the network usage required to return a
-    loose result. 
+    loose result.
     @param verbose: Toggle verbosity.
 
     Example of default behavior using 0.9 (90% usage) threshold:
@@ -294,7 +293,7 @@ def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
         [IPNetwork('10.20.30.32/27')]
 
     """
-    if threshold > 1 or threshold < 0: 
+    if threshold > 1 or threshold < 0:
         raise CidrizeError('Threshold must be from 0.0 to 1.0')
 
     # Can't optimize 0.0.0.0/0!
@@ -324,9 +323,11 @@ def output_str(cidr, sep=', '):
     return sep.join([str(x) for x in cidr])
 
 def normalize_address(ipstr):
-    """Attempts to cleanup an IP address that is in a non-standard format such
+    """
+    Attempts to cleanup an IP address that is in a non-standard format such
     as u'092.123.154.009', so that it can be properly parsed by netaddr or
-    IPy."""
+    IPy.
+    """
     data = ipstr.split('/')
     cidr = '32'
     if len(data) == 1:
@@ -336,8 +337,8 @@ def normalize_address(ipstr):
     else:
         return ipstr
 
-    octets = map(int, myip.split('.'))
-    ip = '.'.join(map(str, octets))
+    octets = (int(i) for i in myip.split('.'))
+    ip = '.'.join([str(o) for o in octets])
     return '{0}/{1}'.format(ip, cidr)
 
 def netaddr_to_ipy(iplist):
@@ -353,7 +354,7 @@ def netaddr_to_ipy(iplist):
 
     if not isinstance(iplist, list):
         return iplist
-    return map(IPy.IP, (str(x) for x in iplist))
+    return [IPy.IP(str(x)) for x in iplist]
 
 def dump(cidr):
     """Dumps a lot of info about a CIDR."""
@@ -367,8 +368,8 @@ def dump(cidr):
         cidr = spanning_cidr(cidr)
 
     # Is this a /32?
-    single = True if cidr.size == 1 else False
-    
+    single = (cidr.size == 1)
+
     if DEBUG:
         print 'Single?', single
         print 'Got: ', cidr
@@ -380,7 +381,7 @@ def dump(cidr):
     ip_bcast = cidr.broadcast
     ip_netmask = cidr.netmask
     ip_hostmask = cidr.hostmask
-    num_hosts = 1 if single else (cidr.last - 1) - cidr.first 
+    num_hosts = 1 if single else (cidr.last - 1) - cidr.first
 
     out  = ''
     out += "Spanning CIDR:\t\t%s\n" % cidr
@@ -392,20 +393,16 @@ def dump(cidr):
     out += "Cisco ACL Mask:\t\t%s\n" % ip_hostmask
     out += "# of hosts:\t\t%s\n" % num_hosts
     out += "Explicit CIDR blocks:\t%s\n" % output_str(orig_cidr)
-    """
-    out += "# Class C networks:\t", $num_classc, "\n";
-    out += "# Class B networks:\t", $num_classb, "\n";
-    out += "# Class A networks:\t", $num_classa, "\n";
-    """
 
     return out
 
 def parse_args(argv):
+    """Parses args."""
     from optparse import OptionParser
     parser = OptionParser(usage='%prog [-v] [-d] [ip network]', add_help_option=0, description='''\
 Cidrize parses IP address notation and returns valid CIDR blocks.''')
 
-    parser.add_option('-h','--help', action="store_false")
+    parser.add_option('-h', '--help', action="store_false")
     parser.add_option('-v', '--verbose', action='store_true',
         help='Be verbose with user-friendly output. Lots of detail.')
     parser.add_option('-d', '--debug', action='store_true',
@@ -413,13 +410,13 @@ Cidrize parses IP address notation and returns valid CIDR blocks.''')
 
     notes = """
     Intelligently take IPv4 addresses, CIDRs, ranges, and wildcard matches to attempt
-    return a valid list of IP addresses that can be worked with. Will automatically 
+    return a valid list of IP addresses that can be worked with. Will automatically
     fix bad network boundries if it can.
 
     Input can be several formats:
 
         '192.0.2.18'
-        '192.0.2.64/26'  
+        '192.0.2.64/26'
         '192.0.2.80-192.0.2.85'
         '192.0.2.170-175'
         '192.0.2.8[0-5]'
@@ -428,7 +425,7 @@ Cidrize parses IP address notation and returns valid CIDR blocks.''')
         '1.2.3.*'
         '192.0.2.170-175, 192.0.2.80-192.0.2.85, 192.0.2.64/26'
 
-    Hyphenated ranges do not need to form a CIDR block. Netaddr does most of 
+    Hyphenated ranges do not need to form a CIDR block. Netaddr does most of
     the heavy lifting for us here.
 
     Input can NOT be (yet):
@@ -446,6 +443,7 @@ Cidrize parses IP address notation and returns valid CIDR blocks.''')
         DEBUG = True
 
     def phelp():
+        """I help."""
         parser.print_help()
         print notes
 
@@ -465,7 +463,6 @@ def main():
     """
     Used by the 'cidr' command that is bundled with the package.
     """
-    global opts
     opts, args = parse_args(sys.argv)
 
     if opts.debug:
@@ -483,8 +480,8 @@ def main():
                 print dump(cidr),
             else:
                 print output_str(cidr)
-    except IndexError, err:
+    except IndexError:
         return -1
-    
+
 if __name__ == '__main__':
     sys.exit(main())
