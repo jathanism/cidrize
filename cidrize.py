@@ -3,7 +3,7 @@
 
 __author__ = 'Jathan McCollum'
 __email__ = 'jathan+github@gmail.com'
-__version__ = '0.5.5'
+__version__ = '0.5.6'
 
 """
 Intelligently take IPv4 addresses, CIDRs, ranges, and wildcard matches to
@@ -253,8 +253,9 @@ def cidrize(ipstr, strict=False, modular=True):
         else:
             raise CidrizeError("Could not determine parse style for '%s'" % ipstr)
 
-        # Logic to honor strict/loose.
-        if not strict:
+        # Logic to honor strict/loose, except IPRange. Doing a spanning_cidr on
+        # an IPRange can be super slow if the range is large (such as a /8).
+        if not strict and not isinstance(result, IPRange):
             return [spanning_cidr(result)]
         else:
             try:

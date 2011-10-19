@@ -1,3 +1,13 @@
+0.5.6 - 2011-10-19
+- Optimization to range style parsing to improve speed on parsing large ranges
+  (such as /8).
+
+0.5.5 - 2011-09-08
+- Add ValueError to exceptions caught in cidrize() for wrapping with CidrizeError
+- removed `ip = IPAddress` assignment when 'ip' was only used twice. unnecessary.
+- Grammer ficks to docstrings
+- Remove copyright
+
 0.5.4 - 2011-06-07
 - Add ValueError to exceptions caught in cidrize() for wrapping with CidrizeError
 
@@ -10,15 +20,17 @@
 - Broke hyphenated (4th octect only) parsing into its own function
 
 0.5.1 - 2011-05-03
-- Fixed a bug in cidrize() when hostnames were passed in.  Now explicitly checking for hostnames and
-  raising an exception.
+- Fixed a bug in cidrize() when hostnames were passed in.  Now explicitly
+  checking for hostnames and raising an exception. 
 - Added a test for this.
 
 0.5 - 2011-04-29
-- Added a feature to parse a comma-separted input string. New parse_commas() function to do this.
-- Modified most parsing methods to accept strict vs. loose parsing except where it doesn't make 
-  sense (e.g. CIDR will always be strict).
-- Added optimize_network_range() to do exactly that based on a specified usage ratio.
+- Added a feature to parse a comma-separted input string. New parse_commas()
+  function to do this.
+- Modified most parsing methods to accept strict vs. loose parsing except where
+  it doesn't make sense (e.g. CIDR will always be strict).
+- Added optimize_network_range() to do exactly that based on a specified usage
+  ratio.
 
 0.4.1 - 2010-09-21
 - Re-arranged parsing order inside of cidrize(); will now parse EVERYTHING FIRST.
@@ -54,4 +66,3 @@
 
 0.1 - 2010-02-19
 - Initial release       
-
