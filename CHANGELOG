@@ -1,3 +1,17 @@
+0.6 - 2012-04-10
+
+- IPv6 addresses are now supported!
+- Enhanced dump output to display IP version
+- Cleaned up formatting in README.rst
+- All debug printing replaced with logging module (hint: set environment
+  variable DEBUG=1)
+- Bugfix to bracket-style in which patterns with brackets not in 4th octet were
+  sometimes matching.
+- Bugfix when returning strict results on parse styles that return IPRange
+  objects (bracket, hyphen styles). If an IPRange is larger than the hard-coded
+  limit of a /18, then it will always be strict.
+- All changes covered by tests.
+
 0.5.6 - 2011-10-19
 - Optimization to range style parsing to improve speed on parsing large ranges
   (such as /8).
@@ -16,7 +30,8 @@
 - More descriptive var name in parse_commas()
 
 0.5.2 - 2011-05-17
-- Reworked the way bracket parsing works; removed PyParsing as a dependency (too slow)
+- Reworked the way bracket parsing works; removed PyParsing as a dependency
+  (too slow)
 - Broke hyphenated (4th octect only) parsing into its own function
 
 0.5.1 - 2011-05-03

@@ -11,6 +11,11 @@ class TestParseBrackets(unittest.TestCase):
         _input = '1.2.3.1[18-21]'
         self.assertEqual(expected, cidrize.parse_brackets(_input))
 
+    def test_parse_brackets_fail(self):
+        expected = None
+        _input = '10.10.1[67].0/24'
+        self.assertEqual(expected, cidrize.parse_brackets(_input))
+
 class TestCidrize(unittest.TestCase):
     def setUp(self):
         self.test = cidrize.cidrize
@@ -21,10 +26,20 @@ class TestCidrize(unittest.TestCase):
         [_input.add(self.test(item)[0]) for item in cidrize.EVERYTHING]
         self.assertEqual(expected, _input)
 
-    def test_cidr_style(self):
+    def test_cidr_style_ipv4(self):
         expected = [IPNetwork('1.2.3.4/32')]
         _input = '1.2.3.4'
         self.assertEqual(expected, self.test(_input))
+
+    def test_cidr_style_ipv6(self):
+        expected = [IPNetwork('fe80:4::c62c:3ff:fe00:861e/128')]
+        _input = 'fe80::c62c:3ff:fe00:861e%en0'
+        self.assertEqual(expected, self.test(_input))
+
+    def test_parse_range(self):
+        expected = IPRange('1.2.3.4', '1.2.3.10')
+        _input = '1.2.3.4-1.2.3.10'
+        self.assertEqual(expected, cidrize.parse_range(_input))
 
     def test_range_style_strict(self):
         expected = [IPNetwork('1.2.3.118/31'), IPNetwork('1.2.3.120/31')]
@@ -52,6 +67,12 @@ class TestCidrize(unittest.TestCase):
         _input = '1.2.3.4-20'
         self.assertEqual(expected, self.test(_input, strict=False))
 
+    def test_hyphen_style_loose_toobig(self):
+        # IPRange objects larger than /18 will always be strict.
+        expected = [IPNetwork('10.0.0.0/18'), IPNetwork('10.0.64.0/29')]
+        _input = '10.0.0.0-10.0.64.7'
+        self.assertEqual(expected, self.test(_input, strict=False))
+
     def test_bracket_style_strict(self):
         expected = [IPNetwork('1.2.3.118/31'), IPNetwork('1.2.3.120/31')]
         _input = '1.2.3.1[18-21]'
@@ -66,8 +87,17 @@ class TestCidrize(unittest.TestCase):
         _input = 'jathan.com'
         self.assertRaises(cidrize.CidrizeError, self.test, _input)
 
+    def test_last_resort_ipv6(self):
+        expected = [IPNetwork('2001:4b0:1668:2602::2/128')]
+        _input = '2001:4b0:1668:2602::2/128'
+        self.assertEqual(expected, self.test(_input))
+
     def test_failure(self):
         _input = '1.2.3.4]'
+        self.assertRaises(cidrize.CidrizeError, self.test, _input)
+
+    def test_bracket_failure(self):
+        _input = '10.10.1[67].0/24'
         self.assertRaises(cidrize.CidrizeError, self.test, _input)
 
 class TestDump(unittest.TestCase):

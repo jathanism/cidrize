@@ -57,7 +57,7 @@ setup(
     install_requires=['netaddr>=0.7.4'],
     keywords = [
             'Networking', 'Systems Administration', 'IANA', 'IEEE', 'CIDR', 'IP',
-            'IPv4', 'IP Address', 'Firewalls', 'Security',
+            'IPv4', 'IPv6', 'IP Address', 'Firewalls', 'Security',
     ],
     classifiers = [
         'Development Status :: 4 - Beta',
