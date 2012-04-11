@@ -1,3 +1,10 @@
+0.6.1 - 2012.04-11
+
+- Added LICENSE.rst (BSD 3-clause)
+- Updated requirement to netaddr>=0.7.6
+- Removed download_url from setup.py
+- Other housekeeping within setup.py
+
 0.6 - 2012-04-10
 
 - IPv6 addresses are now supported!

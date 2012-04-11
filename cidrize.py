@@ -3,7 +3,7 @@
 
 __author__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
-__version__ = '0.6'
+__version__ = '0.6.1'
 
 """
 Intelligently parse IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches to

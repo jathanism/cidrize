@@ -147,3 +147,11 @@ Verbose output::
     Explicit CIDR blocks:   1.2.3.4/30
 
 And that's that!
+
+
+=======
+License
+=======
+
+Cidrize is licensed under the `BSD 3-Clause License <http://www.opensource.org/licenses/BSD-3-Clause>`_. Please see ``LICENSE.rst``
+for the details.
