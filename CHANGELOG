@@ -1,4 +1,9 @@
-0.6.1 - 2012.04-11
+0.6.2 - 2012-04-18
+
+- Version is currently stored in setup.py and cidrize.py now, because if
+  netaddr wasn't installed, cidrize install actually fails. How novel!
+
+0.6.1 - 2012-04-11
 
 - Added LICENSE.rst (BSD 3-clause)
 - Updated requirement to netaddr>=0.7.6

@@ -9,7 +9,8 @@ import os
 import sys
 import unittest
 
-from cidrize import __version__
+#from cidrize import __version__
+__version__ = '0.6.2'
 
 if sys.version_info[:2] < (2, 4):
     print "This package requires Python 2.4+. Sorry!"
