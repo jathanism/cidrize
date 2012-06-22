@@ -3,7 +3,7 @@
 
 __author__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
-__version__ = '0.6.2'
+__version__ = '0.6.3'
 
 """
 Intelligently parse IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches to
@@ -17,7 +17,7 @@ interactively for debugging purposes.
 import itertools
 import logging
 from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange,
-        IPSet, spanning_cidr)
+                     IPSet, spanning_cidr)
 import os
 import re
 import socket
@@ -309,8 +309,7 @@ def cidrize(ipstr, strict=False, modular=True):
             try:
                 return result.cidrs() # IPGlob and IPRange have .cidrs()
             except AttributeError as err:
-                #return result.cidr    # IPNetwork has .cidr
-                return result.cidrs()  # PyLint thinks this is IPRange
+                return result.cidr    # IPNetwork has .cidr
 
     except (AddrFormatError, TypeError, ValueError) as err:
         if modular:

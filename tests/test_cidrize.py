@@ -87,6 +87,11 @@ class TestCidrize(unittest.TestCase):
         _input = 'jathan.com'
         self.assertRaises(cidrize.CidrizeError, self.test, _input)
 
+    def test_nocidr_ipv6(self):
+        expected = [IPNetwork('2001:4b0:1668:2602::2/128')]
+        _input = '2001:4b0:1668:2602::2'
+        self.assertEqual(expected, self.test(_input))
+
     def test_last_resort_ipv6(self):
         expected = [IPNetwork('2001:4b0:1668:2602::2/128')]
         _input = '2001:4b0:1668:2602::2/128'
@@ -112,6 +117,15 @@ class TestOutputStr(unittest.TestCase):
         sep = ', '
         expected = '10.20.30.40/29, 10.20.30.48/31, 10.20.30.50/32'
         self.assertEqual(expected, cidrize.output_str(cidr, sep))
+
+class TestOptimizeNetworkRange(unittest.TestCase):
+    def setUp(self):
+        self.test = cidrize.optimize_network_range
+
+    def test_glob_style(self):
+        expected = [IPNetwork('10.181.25.0/24')]
+        _input = '10.181.25.*'
+        self.assertEqual(expected, self.test(_input))
 
 '''
 class TestParseArgs(unittest.TestCase):
