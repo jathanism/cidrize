@@ -3,7 +3,7 @@
 
 __author__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
-__version__ = '0.6.3'
+__version__ = '0.6.4'
 
 """
 Intelligently parse IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches to
@@ -71,7 +71,8 @@ def parse_brackets(text):
 
     Returns an IPRange object.
 
-    :param text: The string to parse
+    :param text:
+        The string to parse.
     """
     match = bracket_re.match(text)
     if match is None:
@@ -111,7 +112,8 @@ def parse_hyphen(text):
     """
     Parses a hyphen in the last octet, e.g. '1.2.3.4-70'
 
-    :param text: The string to parse
+    :param text:
+        The string to parse
     """
     match = hyphen_re.match(text)
     if match is None:
@@ -125,11 +127,11 @@ def parse_hyphen(text):
 
 def parse_range(ipstr):
     """
-    Given a hyphenated range of IPs, return an IPRange object
+    Given a hyphenated range of IPs, return an IPRange object.
 
-    :param ipstr: The hyphenated IP range
+    :param ipstr:
+        The hyphenated IP range.
     """
-
     start, finish = ipstr.split('-')
     ip = IPRange(start, finish)
     log.debug('parse_range_style() start: %r' % start)
@@ -147,7 +149,8 @@ def parse_commas(ipstr, **kwargs):
 
     Example:
 
-    :param ipstr: A comma-separated string of IP address patterns.
+    :param ipstr:
+        A comma-separated string of IP address patterns.
     """
     # Clean whitespace before we process
     ipstr = ipstr.replace(' ', '').strip()
@@ -170,13 +173,14 @@ def is_ipv6(ipstr):
     Credit: Joe Hildebrand
     Ref: http://stackoverflow.com/a/81899/194311
 
-    :param ipstr: A suspected IPv6 address
+    :param ipstr:
+        A suspected IPv6 address
     """
     log.debug('is_ipv6() got: %r' % ipstr)
     try:
         socket.inet_pton(socket.AF_INET6, ipstr)
         return True
-    except socket.error:
+    except (socket.error, AttributeError):
         return False
 
 def cidrize(ipstr, strict=False, modular=True):
@@ -184,7 +188,10 @@ def cidrize(ipstr, strict=False, modular=True):
     This function tries to determine the best way to parse IP addresses correctly & has
     all the logic for trying to do the right thing!
 
-    Input can be several formats:
+    Returns a list of consolidated netaddr objects.
+
+    Input can be several formats::
+
         '192.0.2.18'
         '192.0.2.64/26'
         '192.0.2.80-192.0.2.85'
@@ -198,21 +205,25 @@ def cidrize(ipstr, strict=False, modular=True):
     Hyphenated ranges do not need to form a CIDR block. Netaddr does most of
     the heavy lifting for us here.
 
-    Input can NOT be:
+    Input can NOT be::
+
         192.0.2.0 0.0.0.255 (hostmask)
         192.0.2.0 255.255.255.0 (netmask)
 
     Does NOT accept network or host mask notation at this time!
 
-    Returns a list of consolidated netaddr objects.
-
     Defaults:
+
         * parsing exceptions will raise a CidrizeError (modular=True).
         * results will be returned as a spanning CIDR (strict=False).
 
-    :param ipstr: IP string to be parsed.
-    :param modular: Set to False to cause exceptions to be stripped & the error text will be
-    returned as a list. This is intended for use with scripts or APIs out-of-the box.
+    :param ipstr:
+        IP string to be parsed.
+
+    :param modular:
+        Set to False to cause exceptions to be stripped & the error text will be
+        returned as a list. This is intended for use with scripts or APIs
+        out-of-the box.
 
     Example:
         >>> import cidrize as c
@@ -226,7 +237,8 @@ def cidrize(ipstr, strict=False, modular=True):
         >>> c.cidrize('1.2.3.4-1.2.3.1099', modular=False)
         ["base address '1.2.3.1099' is not IPv4"]
 
-    :param strict: Set to True to return explicit networks based on start/end addresses.
+    :param strict:
+        Set to True to return explicit networks based on start/end addresses.
 
     Example:
         >>> import cidrize as c
@@ -321,10 +333,14 @@ def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
     Parses the input string and then calculates the subnet usage percentage. If over
     the threshold it will return a loose result, otherwise it returns strict.
 
-    :param ipstr: IP string to be parsed.
-    :param threshold: The percentage of the network usage required to return a
-    loose result.
-    :param verbose: Toggle verbosity.
+    :param ipstr:
+        IP string to be parsed.
+
+    :param threshold:
+        The percentage of the network usage required to return a loose result.
+
+    :param verbose:
+        Toggle verbosity.
 
     Example of default behavior using 0.9 (90% usage) threshold:
         >>> import cidrize
@@ -371,8 +387,11 @@ def output_str(ipobj, sep=', '):
     Returns a character-separated string of constituent CIDR blocks for a given
     IP object (should support both IPy and netaddr objects).
 
-    :param ipobj: An IP address object
-    :param sep: The separator used to join the string together
+    :param ipobj:
+        An IP address object.
+
+    :param sep:
+        The separator used to join the string together.
     """
     return sep.join([str(x) for x in ipobj])
 
@@ -382,7 +401,8 @@ def normalize_address(ipstr):
     as u'092.123.154.009', so that it can be properly parsed by netaddr or
     IPy.
 
-    :param ipstr: An IP address string
+    :param ipstr:
+        An IP address string.
     """
     data = ipstr.split('/')
     cidr = '32'
@@ -403,7 +423,8 @@ def netaddr_to_ipy(iplist):
     for interoperation with old code. If IPy is not available, the input is
     returned as-is.
 
-    :param iplist: A list of netaddr.IPNetwork objects
+    :param iplist:
+        A list of netaddr.IPNetwork objects.
     """
     try:
         import IPy

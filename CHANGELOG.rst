@@ -2,6 +2,13 @@
 Changelog
 =========
 
+0.6.4 - 2013-02-12
+==================
+
+- Fixed a bug when calling socket.inet_pton on Windows machines, which is not
+  available. For Windows we'll just fallback to the "last resort" IPv6 parsing
+  using netaddr.IPNetwork.
+
 0.6.3 - 2012-06-22
 ==================
 
