@@ -33,7 +33,7 @@ class TestCidrize(unittest.TestCase):
 
     def test_cidr_style_ipv6(self):
         expected = [IPNetwork('fe80:4::c62c:3ff:fe00:861e/128')]
-        _input = 'fe80::c62c:3ff:fe00:861e%en0'
+        _input = 'fe80:4::c62c:3ff:fe00:861e'
         self.assertEqual(expected, self.test(_input))
 
     def test_parse_range(self):
@@ -95,6 +95,11 @@ class TestCidrize(unittest.TestCase):
     def test_last_resort_ipv6(self):
         expected = [IPNetwork('2001:4b0:1668:2602::2/128')]
         _input = '2001:4b0:1668:2602::2/128'
+        self.assertEqual(expected, self.test(_input))
+
+    def test_large_ipv6(self):
+        expected = [IPNetwork('2001:4b0:1668:2602::2/64')]
+        _input = '2001:4b0:1668:2602::/64'
         self.assertEqual(expected, self.test(_input))
 
     def test_failure(self):

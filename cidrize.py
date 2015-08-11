@@ -3,7 +3,7 @@
 
 __author__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
-__version__ = '0.6.4'
+__version__ = '0.6.5'
 
 """
 Intelligently parse IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches to
@@ -316,12 +316,14 @@ def cidrize(ipstr, strict=False, modular=True):
             if isinstance(result, IPRange) and result.size >= MAX_RANGE_LEN:
                 log.debug('IPRange objects larger than /18 will always be strict.')
                 return result.cidrs()
+            if isinstance(result, IPNetwork):
+                return [result.cidr]
             return [spanning_cidr(result)]
         else:
             try:
                 return result.cidrs() # IPGlob and IPRange have .cidrs()
             except AttributeError as err:
-                return result.cidr    # IPNetwork has .cidr
+                return [result.cidr]    # IPNetwork has .cidr
 
     except (AddrFormatError, TypeError, ValueError) as err:
         if modular:

@@ -2,6 +2,14 @@
 Changelog
 =========
 
+0.6.5 - 2015-08-11
+==================
+
+- Fixed a bug with IPv6 and large netmasks like /64. The cidrize function
+  now returns immediately with the correct result rather than looping
+  eternally. Added test case.
+- Also fixed the failing ipv6 test case
+
 0.6.4 - 2013-02-12
 ==================
 
