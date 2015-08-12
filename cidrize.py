@@ -41,6 +41,7 @@ log = logging
 # Pre-compiled re patterns. You know, for speed!
 cidr_re = re.compile(r"\d+\.\d+\.\d+\.\d+(?:\/\d+)?$")
 range_re = re.compile(r"\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$")
+range6_re = re.compile(r"[0-9a-fA-F]+:[0-9A-Fa-f:.]+\-[0-9a-fA-F]+:[0-9A-Fa-f:.]+$")
 glob_re = re.compile(r"\d+\.\d+\.\d+\.\*$")
 bracket_re = re.compile(r"(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]$") # parses '1.2.3.4[5-9]' or '1.2.3.[57]'
 hyphen_re = re.compile(r"(.*?)\.(\d+)\-(\d+)$")
@@ -277,6 +278,11 @@ def cidrize(ipstr, strict=False, modular=True):
         # Parse 1.2.3.118-1.2.3.121 range style
         elif range_re.match(ipstr):
             log.debug("Trying range style...")
+            result = parse_range(ipstr)
+
+        # Parse 2001::14-2002::1.2.3.121 range style
+        elif range6_re.match(ipstr):
+            log.debug("Trying range6 style...")
             result = parse_range(ipstr)
 
         # Parse 1.2.3.4-70 hyphen style

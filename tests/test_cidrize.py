@@ -41,6 +41,11 @@ class TestCidrize(unittest.TestCase):
         _input = '1.2.3.4-1.2.3.10'
         self.assertEqual(expected, cidrize.parse_range(_input))
 
+    def test_parse_range6(self):
+        expected = IPRange('2001::1.2.3.4', '2002:1234:abcd::ffee')
+        _input = '2001::1.2.3.4-2002:1234:abcd::ffee'
+        self.assertEqual(expected, cidrize.parse_range(_input))
+
     def test_range_style_strict(self):
         expected = [IPNetwork('1.2.3.118/31'), IPNetwork('1.2.3.120/31')]
         _input = '1.2.3.118-1.2.3.121'
@@ -122,6 +127,13 @@ class TestOutputStr(unittest.TestCase):
         sep = ', '
         expected = '10.20.30.40/29, 10.20.30.48/31, 10.20.30.50/32'
         self.assertEqual(expected, cidrize.output_str(cidr, sep))
+
+    def test_range6(self):
+        cidr = cidrize.cidrize('2001:1234::0.0.64.0-2001:1234::FFff')
+        sep = ', '
+        expected = '2001:1234::4000/114, 2001:1234::8000/113'
+        self.assertEqual(expected, cidrize.output_str(cidr, sep))
+
 
 class TestOptimizeNetworkRange(unittest.TestCase):
     def setUp(self):
