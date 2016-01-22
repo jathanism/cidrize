@@ -3,7 +3,7 @@
 
 __author__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
-__version__ = '0.6.4'
+__version__ = '0.6.5'
 
 """
 Intelligently parse IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches to
@@ -41,6 +41,7 @@ log = logging
 # Pre-compiled re patterns. You know, for speed!
 cidr_re = re.compile(r"\d+\.\d+\.\d+\.\d+(?:\/\d+)?$")
 range_re = re.compile(r"\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$")
+range6_re = re.compile(r"[0-9a-fA-F]+:[0-9A-Fa-f:.]+\-[0-9a-fA-F]+:[0-9A-Fa-f:.]+$")
 glob_re = re.compile(r"\d+\.\d+\.\d+\.\*$")
 bracket_re = re.compile(r"(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]$") # parses '1.2.3.4[5-9]' or '1.2.3.[57]'
 hyphen_re = re.compile(r"(.*?)\.(\d+)\-(\d+)$")
@@ -279,6 +280,11 @@ def cidrize(ipstr, strict=False, modular=True):
             log.debug("Trying range style...")
             result = parse_range(ipstr)
 
+        # Parse 2001::14-2002::1.2.3.121 range style
+        elif range6_re.match(ipstr):
+            log.debug("Trying range6 style...")
+            result = parse_range(ipstr)
+
         # Parse 1.2.3.4-70 hyphen style
         elif hyphen_re.match(ipstr):
             log.debug("Trying hyphen style...")
@@ -316,12 +322,14 @@ def cidrize(ipstr, strict=False, modular=True):
             if isinstance(result, IPRange) and result.size >= MAX_RANGE_LEN:
                 log.debug('IPRange objects larger than /18 will always be strict.')
                 return result.cidrs()
+            if isinstance(result, IPNetwork):
+                return [result.cidr]
             return [spanning_cidr(result)]
         else:
             try:
                 return result.cidrs() # IPGlob and IPRange have .cidrs()
             except AttributeError as err:
-                return result.cidr    # IPNetwork has .cidr
+                return [result.cidr]    # IPNetwork has .cidr
 
     except (AddrFormatError, TypeError, ValueError) as err:
         if modular:

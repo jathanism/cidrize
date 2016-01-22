@@ -33,12 +33,17 @@ class TestCidrize(unittest.TestCase):
 
     def test_cidr_style_ipv6(self):
         expected = [IPNetwork('fe80:4::c62c:3ff:fe00:861e/128')]
-        _input = 'fe80::c62c:3ff:fe00:861e%en0'
+        _input = 'fe80:4::c62c:3ff:fe00:861e'
         self.assertEqual(expected, self.test(_input))
 
     def test_parse_range(self):
         expected = IPRange('1.2.3.4', '1.2.3.10')
         _input = '1.2.3.4-1.2.3.10'
+        self.assertEqual(expected, cidrize.parse_range(_input))
+
+    def test_parse_range6(self):
+        expected = IPRange('2001::1.2.3.4', '2002:1234:abcd::ffee')
+        _input = '2001::1.2.3.4-2002:1234:abcd::ffee'
         self.assertEqual(expected, cidrize.parse_range(_input))
 
     def test_range_style_strict(self):
@@ -97,6 +102,11 @@ class TestCidrize(unittest.TestCase):
         _input = '2001:4b0:1668:2602::2/128'
         self.assertEqual(expected, self.test(_input))
 
+    def test_large_ipv6(self):
+        expected = [IPNetwork('2001:4b0:1668:2602::2/64')]
+        _input = '2001:4b0:1668:2602::/64'
+        self.assertEqual(expected, self.test(_input))
+
     def test_failure(self):
         _input = '1.2.3.4]'
         self.assertRaises(cidrize.CidrizeError, self.test, _input)
@@ -117,6 +127,13 @@ class TestOutputStr(unittest.TestCase):
         sep = ', '
         expected = '10.20.30.40/29, 10.20.30.48/31, 10.20.30.50/32'
         self.assertEqual(expected, cidrize.output_str(cidr, sep))
+
+    def test_range6(self):
+        cidr = cidrize.cidrize('2001:1234::0.0.64.0-2001:1234::FFff')
+        sep = ', '
+        expected = '2001:1234::4000/114, 2001:1234::8000/113'
+        self.assertEqual(expected, cidrize.output_str(cidr, sep))
+
 
 class TestOptimizeNetworkRange(unittest.TestCase):
     def setUp(self):
