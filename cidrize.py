@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
 __author__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
-__version__ = '0.6.5'
+__version__ = '0.7.0'
 
 """
 Intelligently parse IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches to
@@ -14,14 +15,17 @@ The cidrize() function is the public interface. The module may also be run
 interactively for debugging purposes.
 """
 
+# stdlib
 import itertools
 import logging
-from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange,
-                     IPSet, spanning_cidr)
 import os
 import re
 import socket
 import sys
+
+# pypi
+from netaddr import (AddrFormatError, IPAddress, IPGlob, IPNetwork, IPRange,
+                     IPSet, spanning_cidr)
 
 # Globals
 EVERYTHING = ['internet at large', '*', 'all', 'any', 'internet', '0.0.0.0',
@@ -377,15 +381,15 @@ def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
     ratio = float(len(strict)) / float(len(loose))
 
     if verbose:
-        print 'Subnet usage ratio: %s; Threshold: %s' % (ratio, threshold)
+        print('Subnet usage ratio: %s; Threshold: %s' % (ratio, threshold))
 
     if ratio >= threshold:
         if verbose:
-            print 'Over threshold, IP Parse Mode: LOOSE'
+            print('Over threshold, IP Parse Mode: LOOSE')
         result = loose.iter_cidrs()
     else:
         if verbose:
-            print 'Under threshold, IP Parse Mode: STRICT'
+            print('Under threshold, IP Parse Mode: STRICT')
         result = strict.iter_cidrs()
 
     return result
@@ -464,7 +468,7 @@ def dump(cidr):
     log.debug('dump(): Got? %r' % cidr)
 
     ip_first = IPAddress(cidr.first)
-    ip_firsthost = ip_first if single else cidr.iter_hosts().next()
+    ip_firsthost = ip_first if single else next(cidr.iter_hosts())
     ip_gateway = IPAddress(cidr.last - 1)
     ip_bcast = cidr.broadcast
     ip_netmask = cidr.netmask
@@ -529,7 +533,7 @@ debug output set the DEBUG environment variable.''')
     def phelp():
         """I help."""
         parser.print_help()
-        print notes
+        print(notes)
 
     if opts.help or len(args) == 1:
         phelp()
@@ -558,9 +562,9 @@ def main():
         cidr = cidrize(ipstr, modular=False)
         if cidr:
             if opts.verbose:
-                print dump(cidr),
+                print(dump(cidr),)
             else:
-                print output_str(cidr)
+                print(output_str(cidr))
     except IndexError:
         return -1
 

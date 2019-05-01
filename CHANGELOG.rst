@@ -2,6 +2,10 @@
 Changelog
 =========
 
+0.7.0 - 
+- Python3 support via six
+- Python2.6 required
+
 0.6.5 - 2015-08-11
 ==================
 

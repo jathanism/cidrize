@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
 try:
     from setuptools import setup, Command
@@ -10,10 +11,10 @@ import sys
 import unittest
 
 #from cidrize import __version__
-__version__ = '0.6.4'
+__version__ = '0.7.0'
 
-if sys.version_info[:2] < (2, 4):
-    print "This package requires Python 2.4+. Sorry!"
+if sys.version_info[:2] < (2, 6):
+    print("This package requires Python 2.6+. Sorry!")
     sys.exit(-1)
 
 class CleanCommand(Command):
@@ -25,7 +26,7 @@ class CleanCommand(Command):
         self.files = './build ./dist ./MANIFEST ./*.pyc ./*.egg-info'
     def run(self):
         #files = './build ./dist ./MANIFEST ./*.pyc'
-        print 'Cleaning: %s' % self.files
+        print('Cleaning: %s' % self.files)
         os.system('rm -rf ' + self.files)
 
 class TestCommand(Command):
@@ -54,7 +55,8 @@ setup(
     author_email = 'jathan@gmail.com',
     py_modules = ['cidrize'],
     scripts = ['scripts/cidr'],
-    install_requires=['netaddr>=0.7.6'],
+    install_requires=['netaddr>=0.7.6',],
+    tests_require=['netaddr>=0.7.6', ],
     keywords = [
             'Networking', 'Systems Administration', 'IANA', 'IEEE', 'CIDR', 'IP',
             'IPv4', 'IPv6', 'IP Address', 'Firewalls', 'Security',
@@ -73,9 +75,9 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.5',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Topic :: Education :: Testing',
         'Topic :: Internet',
         'Topic :: Internet :: Name Service (DNS)',
