@@ -16,6 +16,7 @@ interactively for debugging purposes.
 
 import itertools
 import logging
+from optparse import OptionParser
 import os
 import re
 import socket
@@ -94,7 +95,7 @@ __all__ = (
     "CidrizeError",
     "dump",
     "normalize_address",
-    "optimize_network_usage",
+    "optimize_network_range",
     "parse_range",
     "is_ipv6",
 )
@@ -244,7 +245,7 @@ def is_ipv6(ipstr):
     :param ipstr:
         A suspected IPv6 address
     """
-    log.debug("is_ipv6() got: %r" % ipstr)
+    log.debug("is_ipv6() got: %r", ipstr)
     try:
         socket.inet_pton(socket.AF_INET6, ipstr)
         return True
@@ -320,7 +321,7 @@ def cidrize(ipstr, strict=False, raise_errors=True):
         [IPNetwork('1.2.3.4/30'), IPNetwork('1.2.3.8/31'), IPNetwork('1.2.3.10/32')]
 
     """
-    ip = None
+    ipobj = None
 
     # Short-circuit to parse commas since it calls back here anyway
     if "," in ipstr:
@@ -342,8 +343,8 @@ def cidrize(ipstr, strict=False, raise_errors=True):
         # Now with IPv6!
         elif RE_CIDR.match(ipstr) or is_ipv6(ipstr):
             log.debug("Trying CIDR style...")
-            ip = IPNetwork(ipstr)
-            return [ip.cidr]
+            ipobj = IPNetwork(ipstr)
+            return [ipobj.cidr]
 
         # Parse 1.2.3.118-1.2.3.121 range style
         elif RE_RANGE.match(ipstr):
@@ -407,7 +408,7 @@ def cidrize(ipstr, strict=False, raise_errors=True):
 
     except (AddrFormatError, TypeError, ValueError) as err:
         if raise_errors:
-            raise CidrizeError(err)
+            raise CidrizeError(str(err)) from err
         return [str(err)]
 
 
@@ -498,8 +499,8 @@ def normalize_address(ipstr):
         return ipstr
 
     octets = (int(i) for i in myip.split("."))
-    ip = ".".join([str(o) for o in octets])
-    return "{0}/{1}".format(ip, cidr)
+    ipobj = ".".join([str(o) for o in octets])
+    return "{0}/{1}".format(ipobj, cidr)
 
 
 def netaddr_to_ipy(iplist):
@@ -512,7 +513,7 @@ def netaddr_to_ipy(iplist):
         A list of netaddr.IPNetwork objects.
     """
     try:
-        import IPy
+        import IPy  # pylint: disable=import-outside-toplevel
     except ImportError:
         return iplist
 
@@ -567,7 +568,6 @@ def dump(cidr):
 
 def parse_args(argv):
     """Parses args."""
-    from optparse import OptionParser
 
     parser = OptionParser(
         usage="%prog [-v] [-d] [ip network]",

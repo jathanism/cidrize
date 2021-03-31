@@ -99,7 +99,7 @@ exclude = '''
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-vv"
+addopts = "-vv --black --pylint --pylint-error-types CEFW"
 testpaths = [
     "tests",
 ]
