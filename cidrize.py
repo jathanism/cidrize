@@ -252,7 +252,7 @@ def is_ipv6(ipstr):
         return False
 
 
-def cidrize(ipstr, strict=False, modular=True):
+def cidrize(ipstr, strict=False, raise_errors=True):
     """
     This function tries to determine the best way to parse IP addresses correctly & has
     all the logic for trying to do the right thing!
@@ -283,18 +283,19 @@ def cidrize(ipstr, strict=False, modular=True):
 
     Defaults:
 
-        * parsing exceptions will raise a CidrizeError (modular=True).
+        * parsing exceptions will raise a CidrizeError (raise_errors=True).
         * results will be returned as a spanning CIDR (strict=False).
 
     :param ipstr:
         IP string to be parsed.
 
-    :param modular:
+    :param raise_errors:
         Set to False to cause exceptions to be stripped & the error text will be
         returned as a list. This is intended for use with scripts or APIs
         out-of-the box.
 
-    Example:
+    Example::
+
         >>> import cidrize as c
         >>> c.cidrize('1.2.3.4-1.2.3.1099')
         Traceback (most recent call last):
@@ -303,13 +304,14 @@ def cidrize(ipstr, strict=False, modular=True):
             raise CidrizeError(err)
         cidrize.CidrizeError: base address '1.2.3.1099' is not IPv4
 
-        >>> c.cidrize('1.2.3.4-1.2.3.1099', modular=False)
+        >>> c.cidrize('1.2.3.4-1.2.3.1099', raise_errors=False)
         ["base address '1.2.3.1099' is not IPv4"]
 
     :param strict:
         Set to True to return explicit networks based on start/end addresses.
 
-    Example:
+    Example::
+
         >>> import cidrize as c
         >>> c.cidrize('1.2.3.4-1.2.3.10')
         [IPNetwork('1.2.3.0/28')]
@@ -322,7 +324,7 @@ def cidrize(ipstr, strict=False, modular=True):
 
     # Short-circuit to parse commas since it calls back here anyway
     if "," in ipstr:
-        return parse_commas(ipstr, strict=strict, modular=modular)
+        return parse_commas(ipstr, strict=strict, raise_errors=raise_errors)
 
     # Short-circuit for hostnames (we're assuming first char is alpha)
     if RE_HOSTNAME.match(ipstr):
@@ -404,7 +406,7 @@ def cidrize(ipstr, strict=False, modular=True):
                 return [result.cidr]  # IPNetwork has .cidr
 
     except (AddrFormatError, TypeError, ValueError) as err:
-        if modular:
+        if raise_errors:
             raise CidrizeError(err)
         return [str(err)]
 
@@ -644,7 +646,7 @@ def main():
     ipstr = opts.ip
 
     try:
-        cidr = cidrize(ipstr, modular=False)
+        cidr = cidrize(ipstr, raise_errors=False)
         if cidr:
             if opts.verbose:
                 print(dump(cidr))
