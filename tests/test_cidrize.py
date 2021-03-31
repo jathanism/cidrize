@@ -1,12 +1,10 @@
-#!/usr/bin/env python
+"""
+Unit tests for ``cidrize``.
+"""
 
 import unittest
 
-from netaddr import (
-    IPRange,
-    IPAddress,
-    IPNetwork,
-)
+from netaddr import IPRange, IPNetwork
 import pytest
 
 import cidrize
@@ -31,7 +29,8 @@ class TestCidrize(unittest.TestCase):
     def test_everything_style(self):
         expected = set([IPNetwork("0.0.0.0/0")])
         _input = set()
-        [_input.add(self.test(item)[0]) for item in cidrize.EVERYTHING]
+        for item in cidrize.EVERYTHING:
+            _input.add(self.test(item)[0])
         assert expected == _input
 
     def test_cidr_style_ipv4(self):
@@ -160,16 +159,3 @@ class TestOptimizeNetworkRange(unittest.TestCase):
         expected = [IPNetwork("10.181.25.0/24")]
         _input = "10.181.25.*"
         assert expected == self.test(_input)
-
-
-"""
-class TestParseArgs(unittest.TestCase):
-    def test_parse_args(self):
-        # assert expected == parse_args(argv))
-        assert False # TODO: implement your test here
-
-class TestMain(unittest.TestCase):
-    def test_main(self):
-        # assert expected == main())
-        assert False # TODO: implement your test here
-"""

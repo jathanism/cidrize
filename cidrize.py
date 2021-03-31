@@ -16,7 +16,7 @@ interactively for debugging purposes.
 
 import itertools
 import logging
-from optparse import OptionParser
+from optparse import OptionParser  # pylint: disable=deprecated-module
 import os
 import re
 import socket
@@ -452,15 +452,16 @@ def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
     strict = IPSet(cidrize(ipstr, strict=True))
     ratio = float(len(strict)) / float(len(loose))
 
-    verbose and print(
-        "Subnet usage ratio: %s; Threshold: %s" % (ratio, threshold)
-    )
+    if verbose:
+        print("Subnet usage ratio: %s; Threshold: %s" % (ratio, threshold))
 
     if ratio >= threshold:
-        verbose and print("Over threshold, IP Parse Mode: LOOSE")
+        if verbose:
+            print("Over threshold, IP Parse Mode: LOOSE")
         result = loose.iter_cidrs()
     else:
-        verbose and print("Under threshold, IP Parse Mode: STRICT")
+        if verbose:
+            print("Under threshold, IP Parse Mode: STRICT")
         result = strict.iter_cidrs()
 
     return result

@@ -14,6 +14,6 @@ install:
   # while simultaneously atttempting to *use* those packages to install other packages.
   # For now we disable it.
   - poetry config installer.parallel false
-  - poetry install
+  - poetry install --no-ansi
 script:
   - poetry run pytest
