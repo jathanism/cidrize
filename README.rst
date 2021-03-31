@@ -1,11 +1,34 @@
 =======
-CIDRIZE
+Cidrize
 =======
 
-Intelligently parse IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches to
+IP address parsing for humans.
+
+Cidrize takes IP address inputs that people tend to use in practice, validates
+them, and converts them to objects.
+
+Intelligently parses IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches to
 attempt return a valid list of IP addresses.
 
 The ``cidrize()`` function does all the work trying to parse IP addresses correctly.
+
+============
+Installation
+============
+
+You can install ``cidrize`` via Pip::
+
+    pip install cidrize
+
+============
+Dependencies
+============
+
+Cidrize is basically a thin veneer around `netaddr <http://pypi.python.org/pypi/netaddr/>`_ to provide a human layer for parsing IP addresses.
+
+=====
+Usage 
+=====
 
 Supported input formats
 -----------------------
@@ -31,23 +54,15 @@ Network mask (e.g. 192.0.2.0 255.255.255.0) and host mask (aka reverse mask,
 
 The cidrize function returns a list of consolidated ``netaddr.IPNetwork``
 objects. By default parsing exceptions will raise a ``CidrizeError`` (with
-default argument of ``modular=True``). You may pass ``modular=False`` to cause
+default argument of ``raise_errors=True``). You may pass ``raise_errors=False`` to cause
 exceptions to be stripped and the error text will be returned as a list. This
 is intended for use with scripts or APIs where receiving exceptions would not
 be preferred.
 
 The module may also be run as a script for debugging purposes.
 
-============
-Dependencies
-============
-
-:`netaddr <http://pypi.python.org/pypi/netaddr/>`_: Pythonic manipulation of
-IPv4, IPv6, CIDR, EUI and MAC network addresses
-
-=====
-Usage 
-=====
+The cidrize function
+--------------------
 
 Fire up your trusty old Python interpreter and follow along!
 
@@ -147,7 +162,6 @@ Verbose output::
     Explicit CIDR blocks:   1.2.3.4/30
 
 And that's that!
-
 
 =======
 License

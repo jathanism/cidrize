@@ -2,9 +2,13 @@
 Changelog
 =========
 
-0.7.0 - 
-- Python3 support via six
-- Python2.6 required
+2.0.0 - 2021-03-03
+==================
+
+- Python3 required
+- Python2 dropped
+- Implemented black and pytest and pylint
+- Switched from setuptools + ``setup.py`` to Poetry + ``pyproject.toml``
 
 0.6.5 - 2015-08-11
 ==================
@@ -41,7 +45,7 @@ Changelog
 - Other housekeeping within setup.py
 
 0.6 - 2012-04-10
-==================
+================
 
 - IPv6 addresses are now supported!
 - Enhanced dump output to display IP version
