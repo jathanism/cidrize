@@ -3,7 +3,7 @@ name = "cidrize"
 version = "2.0.0"
 description = "Cidrize parses IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches & attempts to return a valid list of IP addresses"
 authors = ["Jathan McCollum <jathan@gmail.com>"]
-license = "Apache-2.0"
+license = "BSD-3-Clause"
 readme = "README.rst"
 keywords = [
     "Networking",
@@ -53,8 +53,8 @@ packages = [
 ]
 include = [
     "CHANGELOG.rst",
+    "LICENSE.rst",
     "TODO",
-    "examples/*",
 ]
 
 [tool.poetry.dependencies]
