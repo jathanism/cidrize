@@ -35,15 +35,24 @@ from netaddr import (
 
 
 # Globals
-EVERYTHING = [
-    "internet at large",
+
+# Patterns for matching v4 wildcards
+EVERYTHING_V4 = [
     "*",
-    "all",
-    "any",
-    "internet",
     "0.0.0.0",
     "0.0.0.0/0",
     "0.0.0.0-255.255.255.255",
+    "all",
+    "any",
+    "internet",
+    "internet at large",
+]
+EVERYTHING = EVERYTHING_V4  # Backwards compatibility (just in case)
+
+# Patterns for matching v6 wildcards
+EVERYTHING_V6 = [
+    "::",
+    "[::]",
 ]
 
 # IPRange objects larger than MAX_RANGE_LEN will always be strict.
@@ -338,10 +347,15 @@ def cidrize(
     # Otherwise try everything else
     result = None
     try:
-        # Parse "everything" & immediately return; strict/loose doesn't apply
-        if ipstr in EVERYTHING:  # pylint: disable = no-else-return
+        # Parse "everything" v4 & immediately return; strict/loose doesn't apply
+        if ipstr in EVERYTHING_V4:  # pylint: disable = no-else-return
             log.debug("Trying everything style...")
             return [IPNetwork("0.0.0.0/0")]
+
+        # Parse "everything" v6 & immediately return; strict/loose doesn't apply
+        elif ipstr in EVERYTHING_V6:
+            log.debug("Trying everything style...")
+            return [IPNetwork("::/0")]
 
         # Parse old-fashioned CIDR notation & immediately return; strict/loose doesn't apply
         # Now with IPv6!
