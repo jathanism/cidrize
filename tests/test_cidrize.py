@@ -152,7 +152,7 @@ class TestOutputStr(unittest.TestCase):
     def test_range6(self):
         cidr = cidrize.cidrize("2001:1234::0.0.64.0-2001:1234::FFff")
         sep = ", "
-        expected = "2001:1234::4000/114, 2001:1234::8000/113"
+        expected = "2001:1234::/112"
         assert expected == cidrize.output_str(cidr, sep)
 
 

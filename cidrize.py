@@ -20,6 +20,7 @@ from optparse import OptionParser  # pylint: disable=deprecated-module
 import os
 import re
 import socket
+from string import Template
 import sys
 
 from netaddr import (
@@ -157,7 +158,7 @@ def parse_brackets(text):
         network = prefix + "."
 
     else:
-        raise NotBracketStyle("Bracketed style not parseable: '%s'" % text)
+        raise NotBracketStyle(f"Bracketed style not parseable: {next}")
 
     # Split hyphenated [x-y]
     if "-" in enders:
@@ -254,7 +255,9 @@ def is_ipv6(ipstr):
         return False
 
 
-def cidrize(ipstr, strict=False, raise_errors=True):
+def cidrize(
+    ipstr, strict=False, raise_errors=True
+):  # pylint: disable=too-many-return-statements, too-many-branches
     """
     This function tries to determine the best way to parse IP addresses correctly & has
     all the logic for trying to do the right thing!
@@ -336,7 +339,7 @@ def cidrize(ipstr, strict=False, raise_errors=True):
     result = None
     try:
         # Parse "everything" & immediately return; strict/loose doesn't apply
-        if ipstr in EVERYTHING:
+        if ipstr in EVERYTHING:  # pylint: disable = no-else-return
             log.debug("Trying everything style...")
             return [IPNetwork("0.0.0.0/0")]
 
@@ -380,9 +383,7 @@ def cidrize(ipstr, strict=False, raise_errors=True):
 
         # This will probably fail 100% of the time. By design.
         else:
-            raise CidrizeError(
-                "Could not determine parse style for '%s'" % ipstr
-            )
+            raise CidrizeError(f"Could not determine parse style for {ipstr!r}")
 
         # If it's a single host, just return it wrapped in a list
         if result.size == 1:
@@ -395,17 +396,17 @@ def cidrize(ipstr, strict=False, raise_errors=True):
         if not strict:
             if isinstance(result, IPRange) and result.size >= MAX_RANGE_LEN:
                 log.debug(
-                    "IPRange objects larger than /18 will always be strict."
+                    "IPRange objects larger than /16 will always be strict."
                 )
                 return result.cidrs()
             if isinstance(result, IPNetwork):
                 return [result.cidr]
             return [spanning_cidr(result)]
-        else:
-            try:
-                return result.cidrs()  # IPGlob and IPRange have .cidrs()
-            except AttributeError as err:
-                return [result.cidr]  # IPNetwork has .cidr
+
+        try:
+            return result.cidrs()  # IPGlob and IPRange have .cidrs()
+        except AttributeError:
+            return [result.cidr]  # IPNetwork has .cidr
 
     except (AddrFormatError, TypeError, ValueError) as err:
         if raise_errors:
@@ -454,7 +455,7 @@ def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
     ratio = float(len(strict)) / float(len(loose))
 
     if verbose:
-        print("Subnet usage ratio: %s; Threshold: %s" % (ratio, threshold))
+        print(f"Subnet usage ratio: {ratio}; Threshold: {threshold}")
 
     if ratio >= threshold:
         if verbose:
@@ -502,7 +503,8 @@ def normalize_address(ipstr):
 
     octets = (int(i) for i in myip.split("."))
     ipobj = ".".join([str(o) for o in octets])
-    return "{0}/{1}".format(ipobj, cidr)
+
+    return f"{ipobj}/{cidr}"
 
 
 def netaddr_to_ipy(iplist):
@@ -525,6 +527,22 @@ def netaddr_to_ipy(iplist):
     return [IPy.IP(str(x)) for x in iplist]
 
 
+DUMP_TEMPLATE = """
+Information for $cidr
+
+IP Version:\t\t$cidr_version
+Spanning CIDR:\t\t$cidr
+Block Start/Network:\t$ip_first
+1st host:\t\t$ip_firsthost
+Gateway:\t\t$ip_gateway
+Block End/Broadcast:\t$ip_bcast
+DQ Mask:\t\t$ip_netmask
+Cisco ACL Mask:\t\t$ip_hostmask
+# of hosts:\t\t$num_hosts
+Explicit CIDR blocks:\t$orig_cidr_str
+"""
+
+
 def dump(cidr):
     """
     Dumps a lot of info about a CIDR.
@@ -544,28 +562,20 @@ def dump(cidr):
     log.debug("dump(): Single? %r", single)
     log.debug("dump(): Got? %r", cidr)
 
-    ip_first = IPAddress(cidr.first)
-    ip_firsthost = ip_first if single else next(cidr.iter_hosts())
-    ip_gateway = IPAddress(cidr.last - 1)
-    ip_bcast = cidr.broadcast
-    ip_netmask = cidr.netmask
-    ip_hostmask = cidr.hostmask
-    num_hosts = 1 if single else (cidr.last - 1) - cidr.first
-
-    out = ""
-    out += "Information for %s\n\n" % cidr
-    out += "IP Version:\t\t%s\n" % cidr.version
-    out += "Spanning CIDR:\t\t%s\n" % cidr
-    out += "Block Start/Network:\t%s\n" % ip_first
-    out += "1st host:\t\t%s\n" % ip_firsthost
-    out += "Gateway:\t\t%s\n" % ip_gateway
-    out += "Block End/Broadcast:\t%s\n" % ip_bcast
-    out += "DQ Mask:\t\t%s\n" % ip_netmask
-    out += "Cisco ACL Mask:\t\t%s\n" % ip_hostmask
-    out += "# of hosts:\t\t%s\n" % num_hosts
-    out += "Explicit CIDR blocks:\t%s\n" % output_str(orig_cidr)
-
-    return out
+    return Template(DUMP_TEMPLATE).substitute(
+        cidr=cidr,
+        cidr_version=cidr.version,
+        ip_first=IPAddress(cidr.first),
+        ip_firsthost=IPAddress(cidr.first)
+        if single
+        else next(cidr.iter_hosts()),
+        ip_gateway=IPAddress(cidr.last - 1),
+        ip_bcast=cidr.broadcast,
+        ip_netmask=cidr.netmask,
+        ip_hostmask=cidr.hostmask,
+        num_hosts=1 if single else (cidr.last - 1) - cidr.first,
+        orig_cidr_str=output_str(orig_cidr),
+    )
 
 
 def parse_args(argv):
@@ -656,6 +666,8 @@ def main():
                 print(output_str(cidr))
     except IndexError:
         return -1
+
+    return 0
 
 
 if __name__ == "__main__":
