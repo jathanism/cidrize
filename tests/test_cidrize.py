@@ -26,10 +26,17 @@ class TestCidrize(unittest.TestCase):
     def setUp(self):
         self.test = cidrize.cidrize
 
-    def test_everything_style(self):
+    def test_everything_style_v4(self):
         expected = set([IPNetwork("0.0.0.0/0")])
         _input = set()
-        for item in cidrize.EVERYTHING:
+        for item in cidrize.EVERYTHING_V4:
+            _input.add(self.test(item)[0])
+        assert expected == _input
+
+    def test_everything_style_v6(self):
+        expected = set([IPNetwork("::/0")])
+        _input = set()
+        for item in cidrize.EVERYTHING_V6:
             _input.add(self.test(item)[0])
         assert expected == _input
 
