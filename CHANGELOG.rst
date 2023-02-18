@@ -2,6 +2,14 @@
 Changelog
 =========
 
+2.1.0 - 2023-02-17
+==================
+
+- Dropped Python 3.7 support
+- Fix #16 - Bumped max loose prefix length to /16
+- Fix #12 - Added `-s/--strict` argument to CLI command
+- Fix #11 - Added v6 wildcard support
+
 2.0.0 - 2021-03-03
 ==================
 
