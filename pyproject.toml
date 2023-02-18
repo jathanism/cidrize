@@ -67,7 +67,7 @@ pytest = "^6.2.2"
 black = "^20.8b1"
 pytest-black = "^0.3.12"
 pylint = "^2.7.4"
-pytest-pylint = "^0.18.0"
+pytest-pylint = "^0.19.0"
 
 [tool.poetry.scripts]
 cidr = "cidrize:main"
