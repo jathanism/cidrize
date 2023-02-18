@@ -591,6 +591,12 @@ debug output set the DEBUG environment variable.""",
 
     parser.add_option("-h", "--help", action="store_false")
     parser.add_option(
+        "-s",
+        "--strict",
+        action="store_true",
+        help="Enable strict parsing. (Default: loose)",
+    )
+    parser.add_option(
         "-v",
         "--verbose",
         action="store_true",
@@ -658,7 +664,7 @@ def main():
     ipstr = opts.ip
 
     try:
-        cidr = cidrize(ipstr, raise_errors=False)
+        cidr = cidrize(ipstr, raise_errors=False, strict=opts.strict)
         if cidr:
             if opts.verbose:
                 print(dump(cidr))
