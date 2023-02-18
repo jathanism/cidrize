@@ -84,9 +84,14 @@ class TestCidrize(unittest.TestCase):
         assert expected == self.test(_input, strict=False)
 
     def test_hyphen_style_loose_toobig(self):
-        # IPRange objects larger than /18 will always be strict.
-        expected = [IPNetwork("10.0.0.0/18"), IPNetwork("10.0.64.0/29")]
-        _input = "10.0.0.0-10.0.64.7"
+        # IPRange objects larger than /16 will always be strict.
+        expected = [
+            IPNetwork("10.0.0.0/16"),
+            IPNetwork("10.1.0.0/18"),
+            IPNetwork("10.1.64.0/19"),
+            IPNetwork("10.1.96.0/29"),
+        ]
+        _input = "10.0.0.0-10.1.96.7"
         assert expected == self.test(_input, strict=False)
 
     def test_bracket_style_strict(self):

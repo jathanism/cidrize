@@ -44,9 +44,10 @@ EVERYTHING = [
     "0.0.0.0/0",
     "0.0.0.0-255.255.255.255",
 ]
+
 # IPRange objects larger than MAX_RANGE_LEN will always be strict.
-# This is an IPv4 /18
-MAX_RANGE_LEN = 16384
+# This is an IPv4 /16
+MAX_RANGE_LEN = 65535
 
 # Setup logging
 DEBUG = os.getenv("DEBUG")
