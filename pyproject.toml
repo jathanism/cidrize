@@ -59,7 +59,7 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-netaddr = "~=0.8.0"
+netaddr = "~=0.10.1"
 
 [tool.poetry.dev-dependencies]
 ipython = "^8.10.0"
