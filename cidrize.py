@@ -88,7 +88,7 @@ RE_RANGE6 = re.compile(
 RE_GLOB = re.compile(r"\d+\.\d+\.\d+\.\*$")
 
 # 1.2.3.4[5-9] or 1.2.3.[49] bracket style as a last resort
-RE_BRACKET = re.compile(r"(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]$")
+RE_BRACKET = re.compile(r"(.*?)\.(\d+)?[\[\{\(](.*)[\)\}\]]$")
 
 # 1.2.3.4-70 hyphen style
 RE_HYPHEN = re.compile(r"(.*?)\.(\d+)\-(\d+)$")
