@@ -61,10 +61,10 @@ include = [
 python = "^3.8"
 netaddr = "~=0.8.0"
 
-[poetry.group.dev.dependencies]
+[tool.poetry.group.dev.dependencies]
 ipython = "^8.10.0"
 pytest = "^7.2.1"
-black = "^23.1.0"
+black = "^24.3.0"
 pytest-black = "^0.3.12"
 pylint = "^2.7.4"
 pytest-pylint = "^0.19.0"
