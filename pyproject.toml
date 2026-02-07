@@ -1,10 +1,15 @@
-[tool.poetry]
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "cidrize"
 version = "2.1.1"
 description = "Cidrize parses IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches & attempts to return a valid list of IP addresses"
-authors = ["Jathan McCollum <jathan@gmail.com>"]
+readme = "README.md"
 license = "BSD-3-Clause"
-readme = "README.rst"
+authors = [{name = "Jathan McCollum", email = "jathan@gmail.com"}]
+requires-python = ">=3.10"
 keywords = [
     "Networking",
     "Systems",
@@ -15,10 +20,9 @@ keywords = [
     "IP",
     "IPv4",
     "IPv6",
-    "IP",
     "Address",
     "Firewalls",
-    "Security"
+    "Security",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -31,10 +35,11 @@ classifiers = [
     "Intended Audience :: System Administrators",
     "Intended Audience :: Telecommunications Industry",
     "Natural Language :: English",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Education :: Testing",
     "Topic :: Internet",
     "Topic :: Internet :: Name Service (DNS)",
@@ -45,72 +50,157 @@ classifiers = [
     "Topic :: System :: Networking :: Monitoring",
     "Topic :: System :: Operating System",
     "Topic :: System :: Systems Administration",
-    "Topic :: Utilities"
+    "Topic :: Utilities",
 ]
-homepage = "https://github.com/jathanism/cidrize/"
-packages = [
-    {include = "cidrize.py"}
-]
-include = [
-    "CHANGELOG.rst",
-    "LICENSE.rst",
-    "TODO",
+dependencies = [
+    "netaddr~=0.8.0",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-netaddr = "~=0.8.0"
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "ruff>=0.1.0",
+    "python-semantic-release>=9.0.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-ipython = "^8.10.0"
-pytest = "^7.2.1"
-black = "^24.3.0"
-pytest-black = "^0.3.12"
-pylint = "^2.7.4"
-pytest-pylint = "^0.19.0"
-
-[tool.poetry.scripts]
+[project.scripts]
 cidr = "cidrize:main"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[project.urls]
+Homepage = "https://github.com/jathanism/cidrize/"
 
-[tool.black]
-line-length = 80
-target-version = ['py37']
-include = '\.pyi?$'
-exclude = '''
-(
-  /(
-      \.eggs         # exclude a few common directories in the
-    | \.git          # root of the project
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-  )/
-)
-'''
+[tool.setuptools]
+py-modules = ["cidrize"]
 
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-vv --black --pylint --pylint-error-types CEFw"
-testpaths = [
-    "tests",
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+exclude = [".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = [
+    "B",      # flake8-bugbear - bug prevention
+    "COM",    # flake8-commas - trailing comma consistency
+    "D",      # pydocstyle - docstring formatting
+    "E",      # pycodestyle errors
+    "EM",     # flake8-errmsg - exception message hygiene
+    "ERA",    # eradicate - commented-out code removal
+    "F",      # pyflakes
+    "FURB",   # refurb - modern Python idioms
+    "I",      # isort - import sorting
+    "PERF",   # perflint - performance patterns
+    "PIE",    # flake8-pie - unnecessary constructs
+    "PLR",    # pylint-refactor
+    "PLW",    # pylint-warnings
+    "PT",     # flake8-pytest-style
+    "PTH",    # flake8-use-pathlib
+    "RET",    # flake8-return
+    "RSE",    # flake8-raise
+    "RUF",    # ruff-specific rules
+    "S",      # flake8-bandit - security
+    "SIM",    # flake8-simplify
+    "UP",     # pyupgrade - Python 3 modernization
+    "W",      # pycodestyle warnings
+]
+ignore = [
+    # --- Formatter conflicts ---
+    "COM812",   # trailing-comma-missing (handled by ruff formatter)
+
+    # --- Style exceptions ---
+    "E501",     # line-too-long (handled by formatter)
+
+    # --- Bugbear exceptions ---
+    "B016",     # raise-literal (used intentionally in tests)
+    "B018",     # useless-expression (test assertions)
+
+    # --- Docstring exceptions (not enforcing coverage/style) ---
+    "D100",     # undocumented-public-module
+    "D101",     # undocumented-public-class
+    "D102",     # undocumented-public-method
+    "D103",     # undocumented-public-function
+    "D104",     # undocumented-public-package
+    "D105",     # undocumented-magic-method
+    "D107",     # undocumented-public-init
+    "D200",     # unnecessary-multiline-docstring
+    "D205",     # missing-blank-line-after-summary
+    "D401",     # non-imperative-mood
+    "D402",     # signature-in-docstring
+    "D404",     # docstring-starts-with-this
+
+    # --- Complexity (deep refactoring territory) ---
+    "PLR0911",  # too-many-return-statements
+    "PLR0912",  # too-many-branches
+    "PLR0913",  # too-many-arguments
+    "PLR0915",  # too-many-statements
+    "PLR2004",  # magic-value-comparison
+    "PLW0603",  # global-statement (parser pattern)
+
+    # --- Security false positives ---
+    "S101",     # assert (used in tests)
+    "S104",     # possible-binding-to-all-interfaces (false positive for IP library)
+    "S105",     # hardcoded-password-string (false positives)
+    "S110",     # try-except-pass
+    "S112",     # try-except-continue
+
+    # --- Exception message style (existing code) ---
+    "EM101",    # exception-must-not-use-string-literal
+    "EM102",    # exception-must-not-use-f-string-literal
+
+    # --- Readability preferences ---
+    "SIM108",   # if-else-block-instead-of-if-exp (ternary less readable in many cases)
+
+    # --- Other ---
+    "RUF012",   # mutable-class-default
 ]
 
-[tool.pylint.messages_control]
-# Line length is enforced by Black, so pylint doesn't need to check it.
-# Pylint and Black disagree about how to format multi-line arrays; Black wins.
-disable = """,
-    missing-class-docstring,
-    """
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
-[tool.pylint.basic]
-# No docstrings required for private methods (Pylint default), or for test_ functions, or for inner Meta classes.
-no-docstring-rgx="^(_|test_|Meta$)"
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "ARG",   # unused arguments (test fixtures)
+    "D",     # docstrings not enforced in tests
+    "E402",  # module-level imports not at top
+    "E722",  # bare-except
+    "E731",  # lambda assignments
+    "F821",  # undefined names (test fixtures)
+    "PT009", # pytest-unittest-assertion (allow mixing in tests)
+    "PT027", # pytest-unittest-raises-assertion
+    "S",     # security checks not relevant in tests
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["cidrize"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branch = "main"
+upload_to_pypi = true
+upload_to_release = true
+build_command = "pip install uv && uv build"
+major_on_zero = false
+tag_format = "v{version}"
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = ["feat", "fix", "perf", "refactor", "docs", "chore", "ci", "test", "build"]
+major_tags = ["BREAKING CHANGE"]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]
+
+[tool.semantic_release.changelog]
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false

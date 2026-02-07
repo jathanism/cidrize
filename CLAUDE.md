@@ -8,28 +8,34 @@ Cidrize is a single-file Python library ("IP address parsing for humans") that w
 
 ## Build & Development Commands
 
-This project uses **Poetry** for dependency management.
+This project uses **uv** with a **setuptools** backend.
 
 ```bash
 # Install dependencies
-poetry install
+uv sync
 
-# Run all tests (includes Black formatting check + Pylint linting)
-poetry run pytest
+# Run all tests
+uv run pytest
 
 # Run a specific test
-poetry run pytest tests/test_cidrize.py::TestCidrize::test_cidr_style_ipv4
+uv run pytest tests/test_cidrize.py::TestCidrize::test_cidr_style_ipv4
 
-# Format code
-poetry run black cidrize.py tests/
+# Lint
+ruff check cidrize.py tests/
+
+# Format
+ruff format cidrize.py tests/
 
 # Run the CLI
-poetry run cidr 1.2.3.4/24
+uv run cidr 1.2.3.4/24
+
+# Build the package
+uv build
 ```
 
 ## Architecture
 
-The entire library is a single module: `cidrize.py` (~695 lines). There is no package directory.
+The entire library is a single module: `cidrize.py`. There is no package directory.
 
 **Parsing flow in `cidrize()`:** The main function tries formats in order: CIDR → full range → IPv6 range → last-octet hyphen → glob/wildcard → bracket notation. Each format has a pre-compiled regex (`RE_CIDR`, `RE_RANGE`, `RE_GLOB`, etc.) and a dedicated parse function. On match, it returns a list of `netaddr.IPNetwork` objects.
 
@@ -37,12 +43,25 @@ The entire library is a single module: `cidrize.py` (~695 lines). There is no pa
 
 **Key public API** (defined in `__all__`): `cidrize()`, `parse_range()`, `is_ipv6()`, `normalize_address()`, `optimize_network_range()`, `dump()`, `output_str()`, `CidrizeError`.
 
-**CLI entry point:** `cidr` command is defined in `main()` at the bottom of `cidrize.py`, registered via `[tool.poetry.scripts]`.
+**CLI entry point:** `cidr` command is defined in `main()` at the bottom of `cidrize.py`, registered via `[project.scripts]` in `pyproject.toml`.
 
-**Tests:** `tests/test_cidrize.py` contains pytest classes. Note: `tests/cidrize.py` is a symlink to `../cidrize.py` so tests can import the module directly.
+**Tests:** `tests/test_cidrize.py` contains pytest classes that import `cidrize` directly (the module is at the repo root).
 
 ## Code Style
 
-- **Black** with 80-char line length, targeting Python 3.7+
-- **Pylint** with `missing-class-docstring` disabled; no docstrings required for private methods, test functions, or inner Meta classes
-- Both checks run automatically as part of `poetry run pytest` via `pytest-black` and `pytest-pylint`
+- **Ruff** for both linting and formatting (line length 88, target Python 3.10+)
+- Configuration in `pyproject.toml` under `[tool.ruff]`
+
+## CI/CD & Release
+
+- GitHub Actions workflows in `.github/workflows/`
+- **ci.yml** — runs tests + ruff on push/PR
+- **release.yml** — automated releases via `python-semantic-release`
+- **release-preview.yml** — dry-run release preview on PRs
+- Uses **conventional commits** (`feat:`, `fix:`, `perf:`, etc.) for automatic versioning
+- Dependabot configured for dependency updates
+
+## Git Workflow
+
+- Use **git worktrees** for feature branches — create worktrees under `.worktrees/` (e.g., `.worktrees/feat-foo`)
+- Commit in the worktree, not in the main working directory
