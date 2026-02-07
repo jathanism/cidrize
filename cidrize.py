@@ -573,9 +573,9 @@ def dump(cidr):
         cidr=cidr,
         cidr_version=cidr.version,
         ip_first=IPAddress(cidr.first),
-        ip_firsthost=IPAddress(cidr.first)
-        if single
-        else next(cidr.iter_hosts()),
+        ip_firsthost=(
+            IPAddress(cidr.first) if single else next(cidr.iter_hosts())
+        ),
         ip_gateway=IPAddress(cidr.last - 1),
         ip_bcast=cidr.broadcast,
         ip_netmask=cidr.netmask,
