@@ -154,20 +154,13 @@ def parse_brackets(text):
         return None
 
     parts = match.groups()
-
-    # '1.2.3.4[5-9] style
     log.debug("parse_brackets() parts: %r", (parts,))
-    if len(parts) == 3:
-        prefix, subnet, enders = parts
+    prefix, subnet, enders = parts
+
+    if subnet is not None:
         network = ".".join((prefix, subnet))
-
-    # '1.2.3.[5-9] style
-    elif len(parts) == 2:
-        prefix, enders = parts
-        network = prefix + "."
-
     else:
-        raise NotBracketStyle(f"Bracketed style not parseable: {next}")
+        network = prefix + "."
 
     # Split hyphenated [x-y]
     if "-" in enders:
