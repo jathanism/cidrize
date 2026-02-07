@@ -4,8 +4,8 @@ Unit tests for ``cidrize``.
 
 import unittest
 
-from netaddr import IPRange, IPNetwork
 import pytest
+from netaddr import IPNetwork, IPRange
 
 import cidrize
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-IP address parsing for humans.
+"""IP address parsing for humans.
 
 Cidrize takes IP address inputs that people tend to use in practice, validates
 them, and converts them to objects.
@@ -14,14 +13,14 @@ The ``cidrize()`` function is the public interface. The module may also be run
 interactively for debugging purposes.
 """
 
+import argparse
 import itertools
 import logging
-from optparse import OptionParser  # pylint: disable=deprecated-module
 import os
 import re
 import socket
-from string import Template
 import sys
+from string import Template
 
 from netaddr import (
     AddrFormatError,
@@ -32,7 +31,6 @@ from netaddr import (
     IPSet,
     spanning_cidr,
 )
-
 
 # Globals
 
@@ -47,8 +45,6 @@ EVERYTHING_V4 = [
     "internet",
     "internet at large",
 ]
-EVERYTHING = EVERYTHING_V4  # Backwards compatibility (just in case)
-
 # Patterns for matching v6 wildcards
 EVERYTHING_V6 = [
     "::",
@@ -80,9 +76,7 @@ RE_CIDR = re.compile(r"\d+\.\d+\.\d+\.\d+(?:\/\d+)?$")
 RE_RANGE = re.compile(r"\d+\.\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+$")
 
 # 2001::14-2002::1.2.3.121 range style
-RE_RANGE6 = re.compile(
-    r"[0-9a-fA-F]+:[0-9A-Fa-f:.]+\-[0-9a-fA-F]+:[0-9A-Fa-f:.]+$"
-)
+RE_RANGE6 = re.compile(r"[0-9a-fA-F]+:[0-9A-Fa-f:.]+\-[0-9a-fA-F]+:[0-9A-Fa-f:.]+$")
 
 # 1.2.3.* glob style
 RE_GLOB = re.compile(r"\d+\.\d+\.\d+\.\*$")
@@ -102,13 +96,14 @@ RE_HOSTNAME = re.compile(
 
 # Exports
 __all__ = (
-    "cidrize",
     "CidrizeError",
+    "cidrize",
     "dump",
+    "is_ipv6",
     "normalize_address",
     "optimize_network_range",
+    "output_str",
     "parse_range",
-    "is_ipv6",
 )
 
 
@@ -117,26 +112,9 @@ class CidrizeError(AddrFormatError):
     """Generic Cidrize error."""
 
 
-class NotCIDRStyle(CidrizeError):
-    """Not CIDR style?"""
-
-
-class NotRangeStyle(CidrizeError):
-    """Not range style?"""
-
-
-class NotGlobStyle(CidrizeError):
-    """Not glob style?"""
-
-
-class NotBracketStyle(CidrizeError):
-    """Not bracket style?"""
-
-
 # Functions
 def parse_brackets(text):
-    """
-    Best effort to break down UNIX wildcard style ranges like
+    """Best effort to break down UNIX wildcard style ranges like
     "1.2.3.1[18-21]" into octets append use first & last numbers of
     bracketed range as the min/max of the 4th octet.
 
@@ -147,7 +125,6 @@ def parse_brackets(text):
     :param text:
         The string to parse.
     """
-
     match = RE_BRACKET.match(text)
 
     if match is None:
@@ -179,8 +156,7 @@ def parse_brackets(text):
 
 
 def parse_hyphen(text):
-    """
-    Parses a hyphen in the last octet, e.g. '1.2.3.4-70'
+    """Parses a hyphen in the last octet, e.g. '1.2.3.4-70'.
 
     :param text:
         The string to parse
@@ -197,8 +173,7 @@ def parse_hyphen(text):
 
 
 def parse_range(ipstr):
-    """
-    Given a hyphenated range of IPs, return an IPRange object.
+    """Given a hyphenated range of IPs, return an IPRange object.
 
     :param ipstr:
         The hyphenated IP range.
@@ -213,14 +188,12 @@ def parse_range(ipstr):
 
 
 def parse_commas(ipstr, **kwargs):
-    """
-    This will break up a comma-separated input string of assorted inputs, run them through
+    """This will break up a comma-separated input string of assorted inputs, run them through
     cidrize(), flatten the list, and return the list. If any item in the list
     fails, it will allow the exception to pass through as if it were parsed
     individually. All objects must parse or nothing is returned.
 
     Example:
-
     :param ipstr:
         A comma-separated string of IP address patterns.
     """
@@ -239,8 +212,7 @@ def parse_commas(ipstr, **kwargs):
 
 
 def is_ipv6(ipstr):
-    """
-    Checks whether a string is IPv6 or not. Doesn't handle addresses with
+    """Checks whether a string is IPv6 or not. Doesn't handle addresses with
     CIDR notation, but that's ok.
 
     Credit: Joe Hildebrand
@@ -253,15 +225,12 @@ def is_ipv6(ipstr):
     try:
         socket.inet_pton(socket.AF_INET6, ipstr)
         return True
-    except (socket.error, AttributeError):
+    except (OSError, AttributeError):
         return False
 
 
-def cidrize(
-    ipstr, strict=False, raise_errors=True
-):  # pylint: disable=too-many-return-statements, too-many-branches
-    """
-    This function tries to determine the best way to parse IP addresses correctly & has
+def cidrize(ipstr, strict=False, raise_errors=True):
+    """This function tries to determine the best way to parse IP addresses correctly & has
     all the logic for trying to do the right thing!
 
     Returns a list of consolidated netaddr objects.
@@ -341,24 +310,24 @@ def cidrize(
     result = None
     try:
         # Parse "everything" v4 & immediately return; strict/loose doesn't apply
-        if ipstr in EVERYTHING_V4:  # pylint: disable = no-else-return
+        if ipstr in EVERYTHING_V4:
             log.debug("Trying everything style...")
             return [IPNetwork("0.0.0.0/0")]
 
         # Parse "everything" v6 & immediately return; strict/loose doesn't apply
-        elif ipstr in EVERYTHING_V6:
+        if ipstr in EVERYTHING_V6:
             log.debug("Trying everything style...")
             return [IPNetwork("::/0")]
 
         # Parse old-fashioned CIDR notation & immediately return; strict/loose doesn't apply
         # Now with IPv6!
-        elif RE_CIDR.match(ipstr) or is_ipv6(ipstr):
+        if RE_CIDR.match(ipstr) or is_ipv6(ipstr):
             log.debug("Trying CIDR style...")
             ipobj = IPNetwork(ipstr)
             return [ipobj.cidr]
 
         # Parse 1.2.3.118-1.2.3.121 range style
-        elif RE_RANGE.match(ipstr):
+        if RE_RANGE.match(ipstr):
             log.debug("Trying range style...")
             result = parse_range(ipstr)
 
@@ -402,9 +371,7 @@ def cidrize(
         # IPRange objects larger than MAX_RANGE_LEN will always be strict.
         if not strict:
             if isinstance(result, IPRange) and result.size >= MAX_RANGE_LEN:
-                log.debug(
-                    "IPRange objects larger than /16 will always be strict."
-                )
+                log.debug("IPRange objects larger than /16 will always be strict.")
                 return result.cidrs()
             if isinstance(result, IPNetwork):
                 return [result.cidr]
@@ -422,8 +389,7 @@ def cidrize(
 
 
 def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
-    """
-    Parses the input string and then calculates the subnet usage percentage. If over
+    """Parses the input string and then calculates the subnet usage percentage. If over
     the threshold it will return a loose result, otherwise it returns strict.
 
     :param ipstr:
@@ -454,7 +420,7 @@ def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
         raise CidrizeError("Threshold must be from 0.0 to 1.0")
 
     # Can't optimize 0.0.0.0/0!
-    if ipstr in EVERYTHING:
+    if ipstr in EVERYTHING_V4:
         return cidrize(ipstr)
 
     loose = IPSet(cidrize(ipstr))
@@ -477,8 +443,7 @@ def optimize_network_range(ipstr, threshold=0.9, verbose=DEBUG):
 
 
 def output_str(ipobj, sep=", "):
-    """
-    Returns a character-separated string of constituent CIDR blocks for a given
+    """Returns a character-separated string of constituent CIDR blocks for a given
     IP object (should support both IPy and netaddr objects).
 
     :param ipobj:
@@ -491,8 +456,7 @@ def output_str(ipobj, sep=", "):
 
 
 def normalize_address(ipstr):
-    """
-    Attempts to cleanup an IP address that is in a non-standard format such
+    """Attempts to cleanup an IP address that is in a non-standard format such
     as u'092.123.154.009', so that it can be properly parsed by netaddr or
     IPy.
 
@@ -514,26 +478,6 @@ def normalize_address(ipstr):
     return f"{ipobj}/{cidr}"
 
 
-def netaddr_to_ipy(iplist):
-    """
-    Turns a list of netaddr.IPNetwork objects into IPy.IP objects. Useful
-    for interoperation with old code. If IPy is not available, the input is
-    returned as-is.
-
-    :param iplist:
-        A list of netaddr.IPNetwork objects.
-    """
-    try:
-        import IPy  # pylint: disable=import-outside-toplevel
-    except ImportError:
-        return iplist
-
-    if not isinstance(iplist, list):
-        return iplist
-
-    return [IPy.IP(str(x)) for x in iplist]
-
-
 DUMP_TEMPLATE = """
 Information for $cidr
 
@@ -551,9 +495,7 @@ Explicit CIDR blocks:\t$orig_cidr_str
 
 
 def dump(cidr):
-    """
-    Dumps a lot of info about a CIDR.
-    """
+    """Dumps a lot of info about a CIDR."""
     # Copy original cidr for usage later
     orig_cidr = cidr[:]
 
@@ -573,9 +515,7 @@ def dump(cidr):
         cidr=cidr,
         cidr_version=cidr.version,
         ip_first=IPAddress(cidr.first),
-        ip_firsthost=(
-            IPAddress(cidr.first) if single else next(cidr.iter_hosts())
-        ),
+        ip_firsthost=(IPAddress(cidr.first) if single else next(cidr.iter_hosts())),
         ip_gateway=IPAddress(cidr.last - 1),
         ip_bcast=cidr.broadcast,
         ip_netmask=cidr.netmask,
@@ -587,82 +527,43 @@ def dump(cidr):
 
 def parse_args(argv):
     """Parses args."""
-
-    parser = OptionParser(
-        usage="%prog [-v] [-d] [ip network]",
-        add_help_option=0,
-        description="""\
-Cidrize parses IP address notation and returns valid CIDR blocks. If you want
-debug output set the DEBUG environment variable.""",
+    parser = argparse.ArgumentParser(
+        prog="cidr",
+        description=(
+            "Cidrize parses IP address notation and returns valid CIDR"
+            " blocks. If you want debug output set the DEBUG environment"
+            " variable."
+        ),
     )
-
-    parser.add_option("-h", "--help", action="store_false")
-    parser.add_option(
+    parser.add_argument(
+        "ip",
+        help="IP address, CIDR, range, or glob to parse.",
+    )
+    parser.add_argument(
         "-s",
         "--strict",
         action="store_true",
+        default=False,
         help="Enable strict parsing. (Default: loose)",
     )
-    parser.add_option(
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
+        default=False,
         help="Be verbose with user-friendly output. Lots of detail.",
     )
 
-    notes = """
-    Intelligently take IPv4 addresses, CIDRs, ranges, and wildcard matches to attempt
-    return a valid list of IP addresses that can be worked with. Will automatically
-    fix bad network boundries if it can.
-
-    Input can be several formats:
-
-        '192.0.2.18'
-        '192.0.2.64/26'
-        '192.0.2.80-192.0.2.85'
-        '192.0.2.170-175'
-        '192.0.2.8[0-5]'
-        '192.0.2.[0-29]'
-        '192.168.4.6[1234]'
-        '1.2.3.*'
-        '192.0.2.170-175, 192.0.2.80-192.0.2.85, 192.0.2.64/26'
-
-    Hyphenated ranges do not need to form a CIDR block. Netaddr does most of
-    the heavy lifting for us here.
-
-    Input can NOT be (yet):
-
-        192.0.2.0 0.0.0.255 (hostmask)
-        192.0.2.0 255.255.255.0 (netmask)
-
-    Does NOT accept network or host mask notation.
-    """
-    opts, args = parser.parse_args(argv)
-
-    def phelp():
-        """I help."""
-        parser.print_help()
-        print(notes)
-
-    if opts.help or len(args) == 1:
-        phelp()
-        sys.exit(
-            "ERROR: You must specify an ip address. See usage information above!!"
-        )
-    else:
-        opts.ip = args[1]
+    opts = parser.parse_args(argv[1:])
 
     if "," in opts.ip:
-        phelp()
-        sys.exit("ERROR: Comma-separated arguments aren't supported!")
+        parser.error("Comma-separated arguments aren't supported!")
 
-    return opts, args
+    return opts, argv
 
 
 def main():
-    """
-    Used by the 'cidr' command that is bundled with the package.
-    """
+    """Used by the 'cidr' command that is bundled with the package."""
     opts, args = parse_args(sys.argv)
 
     log.debug("OPTS: %r", opts)
