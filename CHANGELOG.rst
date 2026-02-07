@@ -2,6 +2,12 @@
 Changelog
 =========
 
+2.1.1 - 2026-02-06
+==================
+
+- Fix #33 - Fix bracket parsing for inputs without leading digits
+- Fix #34 - Fix CI tests
+
 2.1.0 - 2023-02-17
 ==================
 

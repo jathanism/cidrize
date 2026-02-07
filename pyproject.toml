@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cidrize"
-version = "2.1.0"
+version = "2.1.1"
 description = "Cidrize parses IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches & attempts to return a valid list of IP addresses"
 authors = ["Jathan McCollum <jathan@gmail.com>"]
 license = "BSD-3-Clause"
@@ -61,7 +61,7 @@ include = [
 python = "^3.8"
 netaddr = "~=0.8.0"
 
-[tool.poetry.dev-dependencies]
+[poetry.group.dev.dependencies]
 ipython = "^8.10.0"
 pytest = "^7.2.1"
 black = "^23.1.0"
