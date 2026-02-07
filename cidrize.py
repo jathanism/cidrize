@@ -88,7 +88,7 @@ RE_RANGE6 = re.compile(
 RE_GLOB = re.compile(r"\d+\.\d+\.\d+\.\*$")
 
 # 1.2.3.4[5-9] or 1.2.3.[49] bracket style as a last resort
-RE_BRACKET = re.compile(r"(.*?)\.(\d+)[\[\{\(](.*)[\)\}\]]$")
+RE_BRACKET = re.compile(r"(.*?)\.(\d+)?[\[\{\(](.*)[\)\}\]]$")
 
 # 1.2.3.4-70 hyphen style
 RE_HYPHEN = re.compile(r"(.*?)\.(\d+)\-(\d+)$")
@@ -154,20 +154,13 @@ def parse_brackets(text):
         return None
 
     parts = match.groups()
-
-    # '1.2.3.4[5-9] style
     log.debug("parse_brackets() parts: %r", (parts,))
-    if len(parts) == 3:
-        prefix, subnet, enders = parts
+    prefix, subnet, enders = parts
+
+    if subnet is not None:
         network = ".".join((prefix, subnet))
-
-    # '1.2.3.[5-9] style
-    elif len(parts) == 2:
-        prefix, enders = parts
-        network = prefix + "."
-
     else:
-        raise NotBracketStyle(f"Bracketed style not parseable: {next}")
+        network = prefix + "."
 
     # Split hyphenated [x-y]
     if "-" in enders:

@@ -16,6 +16,16 @@ class TestParseBrackets(unittest.TestCase):
         _input = "1.2.3.1[18-21]"
         assert expected == cidrize.parse_brackets(_input)
 
+    def test_parse_brackets_no_leading_digit(self):
+        expected = IPRange("1.2.3.4", "1.2.3.9")
+        _input = "1.2.3.[49]"
+        assert expected == cidrize.parse_brackets(_input)
+
+    def test_parse_brackets_no_leading_digit_range(self):
+        expected = IPRange("1.2.3.4", "1.2.3.9")
+        _input = "1.2.3.[4-9]"
+        assert expected == cidrize.parse_brackets(_input)
+
     def test_parse_brackets_fail(self):
         expected = None
         _input = "10.10.1[67].0/24"
@@ -109,6 +119,19 @@ class TestCidrize(unittest.TestCase):
     def test_bracket_style_loose(self):
         expected = [IPNetwork("1.2.3.112/28")]
         _input = "1.2.3.1[18-21]"
+        assert expected == self.test(_input, strict=False)
+
+    def test_bracket_style_no_leading_digit_strict(self):
+        expected = [
+            IPNetwork("1.2.3.4/30"),
+            IPNetwork("1.2.3.8/31"),
+        ]
+        _input = "1.2.3.[4-9]"
+        assert expected == self.test(_input, strict=True)
+
+    def test_bracket_style_no_leading_digit_loose(self):
+        expected = [IPNetwork("1.2.3.0/28")]
+        _input = "1.2.3.[4-9]"
         assert expected == self.test(_input, strict=False)
 
     def test_hostname(self):
