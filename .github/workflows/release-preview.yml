@@ -32,8 +32,8 @@ jobs:
         run: |
           uv tool install 'python-semantic-release>=10,<11'
 
-          # Get next version (--print-only is the dry-run flag in PSR v10)
-          NEXT_VERSION=$(python-semantic-release version --print-only || echo "No version change")
+          # Get next version (--print is the dry-run flag in PSR v10)
+          NEXT_VERSION=$(python-semantic-release version --print || echo "No version change")
           echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
 
           # Generate changelog: delete the existing file so PSR regenerates
