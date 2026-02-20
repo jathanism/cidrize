@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cidrize"
-version = "3.0.0"
+version = "3.1.0"
 description = "Cidrize parses IPv4/IPv6 addresses, CIDRs, ranges, and wildcard matches & attempts to return a valid list of IP addresses"
 readme = "README.md"
 license = "BSD-3-Clause"
